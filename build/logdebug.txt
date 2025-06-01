@@ -1,0 +1,989 @@
+Loaded BIOS (32768 bytes) at address 0x0
+ISR at 0x0038-0x0041: 0xc3 0x3c 0xc 0xc3 0x9d 0x4 0xc3 0x9d 0x13 0xc3 
+Starting at BIOS entry point: 0x0000
+Starting stack initialization
+Finished stack initialization, wrote 3200 bytes
+Stack at 0xfffc-0xffff: 0xff 0xff 0xff 0xff
+Interrupts forcibly enabled: IFF1=1, IFF2=1
+Memory at 0xc3c before execution: 0xe5
+Memory at 0xc3c before execution: 0xe5
+Starting new frame, frame_cycles reset to 0
+Checking PC: 0x0, opcode: 0xf3
+CPU executed, cycles returned: 4
+VDP update: cycle_counter=4 after adding 4 cycles
+Executed 4 cycles, frame_cycles=4, total_cycles=4
+Checking PC: 0x1, opcode: 0xc3
+Executing opcode 0xc3 at PC=0x1, A=0x0, SP=0xf380
+Routing to control flow/stack block
+Routing to handleControlFlow
+Reading memory at 0x3
+Reading memory at 0x2
+JP 0x2d7
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=a
+CPU executed, cycles returned: 10
+VDP update: cycle_counter=14 after adding 10 cycles
+Executed 10 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
+VDP update: cycle_counter=14 after adding 0 cycles
+Executed 0 cycles, frame_cycles=14, total_cycles=14
+Checking PC: 0x2d7, opcode: 0x3e
+Executing opcode 0x3e at PC=0x2d7, A=0x0, SP=0xf380
+Routing to misc block for opcode 0x3e
+After execution, PC=0x2d7, A=0x0, SP=0xf380, F=0x0, cycles=0
+CPU executed, cycles returned: 0
