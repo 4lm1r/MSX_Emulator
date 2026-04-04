@@ -3,14 +3,26 @@
 
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include "debug.h"
-#include "opcodesHandler.h" // Added for OpcodesHandler
 
 class OpcodesHandler;
 
 class Z80A {
 public:
+    enum Flags {
+        C_BIT = (1 << 0), 
+        N_BIT = (1 << 1), 
+        P_BIT = (1 << 2), 
+        X_BIT = (1 << 3), 
+        H_BIT = (1 << 4), 
+        Y_BIT = (1 << 5), 
+        Z_BIT = (1 << 6), 
+        S_BIT = (1 << 7), 
+    };
+
     Z80A();
+    ~Z80A();
     void reset();
     int execute();
     void setMemoryReadCallback(std::function<uint8_t(uint16_t)> callback);
@@ -24,9 +36,9 @@ public:
 
     // Main Registers
     uint8_t A = 0, B = 0, C = 0, D = 0, E = 0, H = 0, L = 0;
-    uint8_t F = 0; // Flags: S, Z, H, P/V, N, C (bit 7 to 0)
+    uint8_t F = 0; 
     uint16_t PC = 0;
-    uint16_t SP = 0xFFFE;
+    uint16_t SP = 0xF380;
 
     // Alternate Registers
     uint8_t A_ = 0, F_ = 0, B_ = 0, C_ = 0, D_ = 0, E_ = 0, H_ = 0, L_ = 0;
@@ -37,28 +49,29 @@ public:
     // Interrupt and Refresh Registers
     uint8_t I = 0, R = 0;
 
-    // Helper to access HL, BC, DE as 16-bit pairs
+    // Helpers
     uint16_t getHL() const { return (H << 8) | L; }
     void setHL(uint16_t value) { H = (value >> 8) & 0xFF; L = value & 0xFF; }
     uint16_t getBC() const { return (B << 8) | C; }
     void setBC(uint16_t value) { B = (value >> 8) & 0xFF; C = value & 0xFF; }
     uint16_t getDE() const { return (D << 8) | E; }
     void setDE(uint16_t value) { D = (value >> 8) & 0xFF; E = value & 0xFF; }
+    uint16_t getAF() const { return (A << 8) | F; }
+    void setAF(uint16_t value) { A = (value >> 8) & 0xFF; F = value & 0xFF; }
 
-    bool IFF1 = false; // Main interrupt enable
-    bool IFF2 = false; // Backup for NMI/RETN
-    bool interruptPending = false; // For delayed EI
+    bool IFF1 = false; 
+    bool IFF2 = false; 
+    bool interruptPending = false; 
     uint64_t total_cycles = 0;
-    uint16_t last_call_return = 0x0000;
 
-    friend class OpcodesHandler;
-
-private:
+    // Callbacks
     std::function<uint8_t(uint16_t)> memoryReadCallback;
     std::function<void(uint16_t, uint8_t)> memoryWriteCallback;
     std::function<uint8_t(uint8_t)> ioReadCallback;
     std::function<void(uint8_t, uint8_t)> ioWriteCallback;
-    OpcodesHandler* opcodeHandler = nullptr;
+
+private:
+    std::unique_ptr<OpcodesHandler> opcodeHandler;
 };
 
 #endif

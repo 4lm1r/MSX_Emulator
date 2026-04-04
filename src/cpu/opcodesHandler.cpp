@@ -10,1164 +10,1438 @@ OpcodesHandler::OpcodesHandler(Z80A& cpu) : cpu(cpu), cycles(0) {
     }
 }
 
-void OpcodesHandler::executeOpcode(uint8_t opcode) {
-    cycles = 0; // Reset cycles for this instruction
-    debug_log << "Executing opcode 0x" << std::hex << (int)opcode << " at PC=0x" << (int)cpu.PC
-              << ", A=0x" << (int)cpu.A << ", SP=0x" << (int)cpu.SP << std::dec << std::endl;
-
-   // Handle prefixes and special cases first
-        if (opcode == 0xED) { // ED prefix for extended instructions (like RETI)
-            uint8_t next_opcode = readMemory(cpu.PC + 1);
-            debug_log << "ED prefix detected, next opcode: 0x" << std::hex << (int)next_opcode << std::dec << std::endl;
-            cpu.PC++; // Consume the ED prefix
-            if (next_opcode == 0x4D) { // RETI
-                uint16_t addr = (readMemory(cpu.SP + 1) << 8) | readMemory(cpu.SP);
-                cpu.SP += 2;
-                cpu.PC = addr;
-                debug_log << "RETI to 0x" << std::hex << addr << std::dec << std::endl;
-                cycles = 14;
-            } else {
-                debug_log << "Unhandled ED instruction opcode 0x" << std::hex << (int)next_opcode << std::dec << std::endl;
-                cpu.PC++;
-                cycles = 4;
-            }
-        }
-        else if (opcode == 0xDD) { // DD prefix (IX register instructions)
-            uint8_t next_opcode = readMemory(cpu.PC + 1);
-            debug_log << "DD prefix detected, next opcode: 0x" << std::hex << (int)next_opcode << std::dec << std::endl;
-            cpu.PC++; // Consume the DD prefix
-            handleIXInstructions(next_opcode);
-        }
-        else if (opcode == 0xCB) { // CB prefix (bit instructions)
-            debug_log << "Routing to bit instruction block for opcode 0xCB" << std::endl;
-            uint8_t nextByte = readMemory(cpu.PC + 1); // Fetch the next byte
-            cpu.PC += 2; // Increment PC past the prefix and the instruction
-            handleBitInstructions(nextByte);
-            cycles = 8; // Base cycle count for CB instructions
-        }
-        else if (opcode == 0xFD) { // FD prefix (IY register instructions)
-            uint8_t next_opcode = readMemory(cpu.PC + 1);
-            debug_log << "FD prefix detected, next opcode: 0x" << std::hex << (int)next_opcode << std::dec << std::endl;
-            cpu.PC++; // Consume the FD prefix
-            handleIYInstructions(next_opcode);
-        }
-        // Explicit special cases
-        else if (opcode == 0xD3 || opcode == 0xDB) { // OUT (n), A; IN A, (n)
-            handleIO(opcode);
-        }
-        else if (opcode == 0xFE) { // CP n
-            handleArithmetic(opcode);
-        }
-        else if (opcode == 0x00) { // NOP
-            cpu.PC++;
-            debug_log << "NOP" << std::endl;
-            cycles = 4;
-        }
-        else if (opcode == 0x76) { // HALT
-            cpu.halted = true;
-            cpu.PC++;
-            debug_log << "HALT" << std::endl;
-            cycles = 4;
-        }
-        else if (opcode == 0x11) { // LD DE, nn
-            uint16_t value = (readMemory(cpu.PC + 2) << 8) | readMemory(cpu.PC + 1);
-            cpu.setDE(value);
-            cpu.PC += 3;
-            debug_log << "LD DE, 0x" << std::hex << value << std::dec << std::endl;
-            cycles = 10;
-        }
-        // Specific opcode checks (e.g., LD instructions) before pattern-based blocks
-        else if (opcode == 0x06 || opcode == 0x0E || opcode == 0x21 || opcode == 0x77 || opcode == 0x3E ||
-                 opcode == 0x7E || opcode == 0x0A || opcode == 0x02 || opcode == 0x47 || opcode == 0x01 || 
-                 opcode == 0x4D || opcode == 0x61 || opcode == 0x3A || opcode == 0x56 || opcode == 0x4F || 
-                 opcode == 0x36 || opcode == 0x2E || opcode == 0x32) { // LD instructions
-            debug_log << "Routing to handleDataTransfer" << std::endl;
-            handleDataTransfer(opcode);
-        }
-        // Arithmetic and logic with immediate operands
-        else if ((opcode & 0xCF) == 0xC6 || (opcode & 0xCF) == 0xCE) { // e.g., ADD A, n; ADC A, n
-            if (opcode == 0xC6 || opcode == 0xD6) {
-                debug_log << "Routing to handleArithmetic for immediate operand" << std::endl;
-                handleArithmetic(opcode);
-            } else {
-                debug_log << "Routing to handleLogic for immediate operand" << std::endl;
-                handleLogic(opcode);
-            }
-        }
-        // Bit manipulation (RLCA, RRCA)
-        else if (opcode == 0x07 || opcode == 0x0F) {
-            debug_log << "Routing to handleBitManip" << std::endl;
-            handleBitManip(opcode);
-        }
-        // Control flow and stack (11xx xxxx)
-        else if ((opcode & 0xC0) == 0xC0) {
-            debug_log << "Routing to control flow/stack block" << std::endl;
-            if (opcode == 0xC5 || opcode == 0xC1 || opcode == 0xD1 || opcode == 0xE5 || 
-                opcode == 0xE1 || opcode == 0xF1 || opcode == 0xE3 || opcode == 0xD5 || opcode == 0xF5) {
-                debug_log << "Routing to handleStack" << std::endl;
-                handleStack(opcode);
-            } else if (opcode == 0xD9 || opcode == 0x08) { // EXX or EX AF, AF'
-                debug_log << "Routing to handleControlFlow" << std::endl;
-                handleControlFlow(opcode);
-            } else {
-                debug_log << "Routing to handleControlFlow" << std::endl;
-                handleControlFlow(opcode);
-            }
-        }
-        // Arithmetic and logic (10xx xxxx)
-        else if ((opcode & 0xC0) == 0x80) {
-            debug_log << "Routing to arithmetic/logic block for opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            if (opcode == 0xA0 || opcode == 0xA2 || opcode == 0xAF || opcode == 0xB0 || 
-                opcode == 0xA8) { 
-                debug_log << "Routing to handleLogic" << std::endl;
-                handleLogic(opcode);
-            } else if (opcode == 0x80 || opcode == 0x83 || opcode == 0x86 || opcode == 0x90 || 
-                       opcode == 0x7C || opcode == 0x93 || opcode == 0x9A || opcode == 0xBE) {
-                debug_log << "Routing to handleArithmetic" << std::endl;
-                handleArithmetic(opcode);
-            } else {
-                debug_log << "Routing to handleArithmetic" << std::endl;
-                handleArithmetic(opcode);
-            }
-        }
-        // Misc block (00xx xxxx) - moved lower to avoid capturing specific opcodes like 0x3E
-        else if ((opcode & 0xC0) == 0x00) {
-            debug_log << "Routing to misc block for opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            if (opcode == 0x2F) { // CPL
-                debug_log << "Routing to handleLogic" << std::endl;
-                handleLogic(opcode);
-            } else {
-                debug_log << "Unhandled in misc block, opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-                cpu.PC++;
-                cycles = 4;
-            }
-        }
-        // Data transfer, arithmetic, control flow (remaining 00xx xxxx and 01xx xxxx)
-        else {
-            debug_log << "Routing to default block for opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            if (opcode == 0x3C || opcode == 0x3D || opcode == 0x80 || opcode == 0x90 || 
-                opcode == 0x86 || opcode == 0x04 || opcode == 0x0C || opcode == 0x05 || 
-                opcode == 0x23 || opcode == 0x03 || opcode == 0x24 || opcode == 0x93 || 
-                opcode == 0x9A || opcode == 0xBE || opcode == 0x2C || opcode == 0x25) {
-                debug_log << "Routing to handleArithmetic" << std::endl;
-                handleArithmetic(opcode);
-            }
-            else if (opcode == 0x20 || opcode == 0x28 || opcode == 0x38 || opcode == 0x10 || opcode == 0x30) {
-                debug_log << "Routing to handleControlFlow" << std::endl;
-                handleControlFlow(opcode);
-            }
-            else {
-                debug_log << "Unhandled opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-                cpu.PC++;
-                cycles = 4;
-            }
-        }
-
-        debug_log << "After execution, PC=0x" << std::hex << (int)cpu.PC
-                  << ", A=0x" << (int)cpu.A << ", SP=0x" << (int)cpu.SP
-                  << ", F=0x" << (int)cpu.F << ", cycles=" << cycles << std::dec << std::endl;
+uint16_t OpcodesHandler::read16(uint16_t addr) {
+  return readMemory(addr) | (readMemory(addr + 1) << 8);
 }
 
-void OpcodesHandler::InitializeOpcodeMap() {
-		handleIY[ 0xE5 ] = &OpcodesHandler::IY_OXE5;
-		handleIY[ 0x77 ] = &OpcodesHandler::IY_OX77;
-		handleIY[ 0x7E ] = &OpcodesHandler::IY_OX7E;
-		dataTransfer[ 0x3E ] = &OpcodesHandler::DT_OX3E;
-		dataTransfer[ 0x06 ] = &OpcodesHandler::DT_OXO6;
-		dataTransfer[ 0x0E ] = &OpcodesHandler::DT_OXOE;
-		dataTransfer[ 0x01 ] = &OpcodesHandler::DT_OXO1;
-		dataTransfer[ 0x21 ] = &OpcodesHandler::DT_OX21;
-		dataTransfer[ 0x77 ] = &OpcodesHandler::DT_OX77;
-		dataTransfer[ 0x7E ] = &OpcodesHandler::DT_OX7E;
-	}
-// New IY instruction handler (similar to IX)
+void OpcodesHandler::updateSZP(uint8_t result) {
+  cpu.F &= ~(Z80A::S_BIT | Z80A::Z_BIT | Z80A::P_BIT); // Clear S, Z, P 
+  if (result & 0x80) cpu.F |= Z80A::S_BIT;
+  if (result == 0) cpu.F |= Z80A::Z_BIT;
 
-void OpcodesHandler::handleIYInstructions(uint8_t opcode) {
-	if (handleIY.empty()) {
-        InitializeOpcodeMap();
-    }
-
-    auto it = handleIY.find(opcode);
-    if (it != handleIY.end()) {
-        (this->*(it->second))(opcode); // Call the mapped function
-    } else {
-        debug_log << "Unhandled arithmetic opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            cpu.PC++;
-            cycles = 4;
-    }
-	
+  // Parity calculation (bit count is even)
+  uint8_t p = result;
+  p ^= p >> 4;
+  p ^= p >> 2;
+  p ^= p >> 1;
+  if (!(p & 1)) cpu.F |= Z80A::P_BIT;
 }
-void OpcodesHandler::handleIXInstructions(uint8_t opcode) {
-    if (handleIX.empty()) {
-        InitializeOpcodeMap();
-    }
 
-    auto it = handleIX.find(opcode);
-    if (it != handleIX.end()) {
-        (this->*(it->second))(opcode); // Call the mapped function
-    } else {
-        debug_log << "Unhandled arithmetic opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            cpu.PC++;
-            cycles = 4;
-    }
-
+void OpcodesHandler::updateFlagsAdd(uint8_t a, uint8_t b, uint16_t result) {
+  uint8_t res8 = (uint8_t)result;
+  cpu.F = 0;
+  if (res8 & 0x80) cpu.F |= Z80A::S_BIT;
+  if (res8 == 0) cpu.F |= Z80A::Z_BIT;
+  if ((a & 0x0F) + (b & 0x0F) > 0x0F) cpu.F |= Z80A::H_BIT;
+  // Overflow: set if two positives made a negative or two negatives made a positive 
+  if (((a ^ res8) & (b ^ res8) & 0x80)) cpu.F |= Z80A::P_BIT;
+  if (result > 0xFF) cpu.F |= Z80A::C_BIT;
+  // N_BIT is 0 for addition 
 }
-void OpcodesHandler::handleDataTransfer(uint8_t opcode) {
-         if (dataTransfer.empty()) {
-        InitializeOpcodeMap();
-    }
 
-    auto it = dataTransfer.find(opcode);
-    if (it != dataTransfer.end()) {
-        (this->*(it->second))(opcode); // Call the mapped function
-    } else {
-        debug_log << "Unhandled arithmetic opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            cpu.PC++;
-            cycles = 4;
-    }      
+void OpcodesHandler::updateFlagsSub(uint8_t a, uint8_t b, uint16_t result) {
+  uint8_t res8 = (uint8_t)result;
+  cpu.F = Z80A::N_BIT; // Set N flag because this is a subtraction 
+
+  if (res8 & 0x80) cpu.F |= Z80A::S_BIT;
+  if (res8 == 0) cpu.F |= Z80A::Z_BIT;
+  // Half-carry for subtraction: borrow from bit 4 
+  if ((a & 0x0F) < (b & 0x0F)) cpu.F |= Z80A::H_BIT;
+  // Overflow: set if operands had different signs and result sign is different from 'a'
+  if (((a ^ b) & (a ^ res8) & 0x80)) cpu.F |= Z80A::P_BIT;
+  if (result > 0xFF) cpu.F |= Z80A::C_BIT;
 }
-	void OpcodesHandler::IY_OXE5(uint8_t) {
-		cpu.SP -= 2;
-		writeMemory(cpu.SP + 1, (cpu.IY >> 8) & 0xFF);
-		writeMemory(cpu.SP, cpu.IY & 0xFF);
-		cpu.PC++;
-		debug_log << "PUSH IY" << std::endl;
-		cycles = 15;
-	}
-	void OpcodesHandler::IY_OX77(uint8_t) {  // LD (IY+d), A
-		int8_t d = readMemory(cpu.PC + 1);
-		uint16_t addr = cpu.IY + d;
-		writeMemory(addr, cpu.A);
-		cpu.PC += 2;
-		debug_log << "LD (IY+d=0x" << std::hex << addr << "), A (0x" << (int)cpu.A << ")" << std::dec << std::endl;
-		cycles = 19;
-	}
-	void OpcodesHandler::IY_OX7E(uint8_t) {
-		int8_t d = readMemory(cpu.PC + 1);
-		uint16_t addr = cpu.IY + d;
-		cpu.A = readMemory(addr);
-		cpu.PC += 2;
-		debug_log << "LD A, (IY+d=0x" << std::hex << addr << ") = 0x" << (int)cpu.A << std::dec << std::endl;
-		cycles = 19;
-	}
-	void OpcodesHandler::IX_OX77(uint8_t) { // LD (IX+d), A
-            int8_t d = readMemory(cpu.PC + 1);
-            uint16_t addr = cpu.IX + d;
-            writeMemory(addr, cpu.A);
-            cpu.PC += 2;
-            debug_log << "LD (IX+d=0x" << std::hex << addr << "), A (0x" << (int)cpu.A << ")" << std::dec << std::endl;
-            cycles = 19;
-        }
-        void OpcodesHandler::IX_OX74(uint8_t) { // LD (IX+d), H
-            int8_t d = readMemory(cpu.PC + 1);
-            uint16_t addr = cpu.IX + d;
-            writeMemory(addr, cpu.H);
-            cpu.PC += 2;
-            debug_log << "LD (IX+d=0x" << std::hex << addr << "), H (0x" << (int)cpu.H << ")" << std::dec << std::endl;
-            cycles = 19;
-        }
-        void OpcodesHandler::IX_OX75(uint8_t) { // LD (IX+d), L
-            int8_t d = readMemory(cpu.PC + 1);
-            uint16_t addr = cpu.IX + d;
-            writeMemory(addr, cpu.L);
-            cpu.PC += 2;
-            debug_log << "LD (IX+d=0x" << std::hex << addr << "), L (0x" << (int)cpu.L << ")" << std::dec << std::endl;
-            cycles = 19;
-        }
-        void OpcodesHandler::IX_OX7E(uint8_t) { // LD A, (IX+d)
-            int8_t d = readMemory(cpu.PC + 1);
-            uint16_t addr = cpu.IX + d;
-            cpu.A = readMemory(addr);
-            cpu.PC += 2;
-            debug_log << "LD A, (IX+d=0x" << std::hex << addr << ") = 0x" << (int)cpu.A << std::dec << std::endl;
-            cycles = 19;
-        }
-        void OpcodesHandler::IX_OXE5(uint8_t) { // PUSH IX
-            cpu.SP -= 2;
-            writeMemory(cpu.SP + 1, (cpu.IX >> 8) & 0xFF);
-            writeMemory(cpu.SP, cpu.IX & 0xFF);
-            cpu.PC++;
-            debug_log << "PUSH IX" << std::endl;
-            cycles = 15;
-        }
-	void OpcodesHandler::DT_OX3E(uint8_t) {   // LD A, n
-	      uint8_t value = readMemory(cpu.PC + 1);
-	      cpu.A = value;
-	      cpu.PC += 2;
-	      debug_log << "LD A, 0x" << std::hex << (int)value << std::dec << std::endl;
-	      cycles = 7;
-	}
-	void OpcodesHandler::DT_OXO6(uint8_t) { // LD B, n
-            uint8_t value = readMemory(cpu.PC + 1);
-            cpu.B = value;
-            cpu.PC += 2;
-            debug_log << "LD B, 0x" << std::hex << (int)value << std::dec << std::endl;
-            cycles = 7;
-        }
-        void OpcodesHandler::DT_OXOE(uint8_t) { // LD C, n
-            uint8_t value = readMemory(cpu.PC + 1);
-            cpu.C = value;
-            cpu.PC += 2;
-            debug_log << "LD C, 0x" << std::hex << (int)value << std::dec << std::endl;
-            cycles = 7;
-        }
-        void OpcodesHandler::DT_OXO1(uint8_t) { // LD BC, nn
-            uint16_t value = (readMemory(cpu.PC + 2) << 8) | readMemory(cpu.PC + 1);
-            cpu.setBC(value);
-            cpu.PC += 3;
-            debug_log << "LD BC, 0x" << std::hex << value << std::dec << std::endl;
-            cycles = 10;
-        }
-        void OpcodesHandler::DT_OX21(uint8_t) { // LD HL, nn
-            uint16_t value = (readMemory(cpu.PC + 2) << 8) | readMemory(cpu.PC + 1);
-            cpu.setHL(value);
-            cpu.PC += 3;
-            debug_log << "LD HL, 0x" << std::hex << value << std::dec << std::endl;
-            cycles = 10;
-        }
-        void OpcodesHandler::DT_OX77(uint8_t) { // LD (HL), A
-            uint16_t addr = cpu.getHL();
-            writeMemory(addr, cpu.A);
-            cpu.PC++;
-            debug_log << "LD (HL=0x" << std::hex << addr << "), A (0x" << (int)cpu.A << ")" << std::dec << std::endl;
-            cycles = 7;
-        }
-        void OpcodesHandler::DT_OX7E(uint8_t) { // LD A, (HL)
-            uint16_t addr = cpu.getHL();
-            cpu.A = readMemory(addr);
-            cpu.PC++;
-            debug_log << "LD A, (HL=0x" << std::hex << addr << ") = 0x" << (int)cpu.A << std::dec << std::endl;
-            cycles = 7;
-        }
-        void OpcodesHandler::DT_OXOA(uint8_t) { // LD A, (BC)
-            uint16_t addr = cpu.getBC();
-            cpu.A = readMemory(addr);
-            cpu.PC++;
-            debug_log << "LD A, (BC=0x" << std::hex << addr << ") = 0x" << (int)cpu.A << std::dec << std::endl;
-            cycles = 7;
-        }
-        void OpcodesHandler::DT_OXO2(uint8_t) { // LD (BC), A
-            uint16_t addr = cpu.getBC();
-            writeMemory(addr, cpu.A);
-            cpu.PC++;
-            debug_log << "LD (BC=0x" << std::hex << addr << "), A (0x" << (int)cpu.A << ")" << std::dec << std::endl;
-            cycles = 7;
-        }
-        void OpcodesHandler::DT_OX47(uint8_t) { // LD B, A
-            cpu.B = cpu.A;
-            cpu.PC++;
-            debug_log << "LD B, A" << std::endl;
-            cycles = 4;
-        }
-        void OpcodesHandler::DT_OX4D(uint8_t) { // LD C, L
-            cpu.C = cpu.L;
-            cpu.PC++;
-            debug_log << "LD C, L" << std::endl;
-            cycles = 4;
-        }
-        void OpcodesHandler::DT_OX61(uint8_t) { // LD H, C
-            cpu.H = cpu.C;
-            cpu.PC++;
-            debug_log << "LD H, C" << std::endl;
-            cycles = 4;
-        }
-        void OpcodesHandler::DT_OX3A(uint8_t) { // LD A, (nn)
-            uint16_t addr = (readMemory(cpu.PC + 2) << 8) | readMemory(cpu.PC + 1);
-            cpu.A = readMemory(addr);
-            cpu.PC += 3;
-            debug_log << "LD A, (0x" << std::hex << addr << ") = 0x" << (int)cpu.A << std::dec << std::endl;
-            cycles = 13;
-        }
-        void OpcodesHandler::DT_OX56(uint8_t) { // LD D, (HL)
-            uint16_t addr = cpu.getHL();
-            cpu.D = readMemory(addr);
-            cpu.PC++;
-            debug_log << "LD D, (HL=0x" << std::hex << addr << ") = 0x" << (int)cpu.D << std::dec << std::endl;
-            cycles = 7;
-        }
-        void OpcodesHandler::DT_OX4F(uint8_t) { // LD C, A
-            cpu.C = cpu.A;
-            debug_log << "LD C, A: C=0x" << std::hex << (int)cpu.C << std::dec << std::endl;
-            cpu.PC++;
-            cycles = 4;
-        }
-        void OpcodesHandler::DT_OX36(uint8_t) { // LD (HL), n
-            uint8_t value = readMemory(cpu.PC + 1);
-            uint16_t addr = cpu.getHL();
-            writeMemory(addr, value);
-            cpu.PC += 2;
-            debug_log << "LD (HL=0x" << std::hex << addr << "), 0x" << (int)value << std::dec << std::endl;
-            cycles = 10;
-        }
-        void OpcodesHandler::DT_OX2E(uint8_t) { // LD L, n
-            uint8_t value = readMemory(cpu.PC + 1);
-            cpu.L = value;
-            cpu.PC += 2;
-            debug_log << "LD L, 0x" << std::hex << (int)value << std::dec << std::endl;
-            cycles = 7;
-        }
-        void OpcodesHandler::DT_OX32(uint8_t) { // LD (nn), A
-            uint16_t addr = (readMemory(cpu.PC + 2) << 8) | readMemory(cpu.PC + 1);
-            writeMemory(addr, cpu.A);
-            cpu.PC += 3;
-            debug_log << "LD (0x" << std::hex << addr << "), A (0x" << (int)cpu.A << ")" << std::dec << std::endl;
-            cycles = 13;
-        }
-        void OpcodesHandler::DT_OX7D(uint8_t) { // LD A, L
-            cpu.A = cpu.L;
-            cpu.PC++;
-            debug_log << "LD A, L" << std::endl;
-            cycles = 4;
-        }
-        void OpcodesHandler::DT_OX78(uint8_t) { // LD A, B
-            cpu.A = cpu.B;
-            cpu.PC++;
-            debug_log << "LD A, B" << std::endl;
-            cycles = 4;
-        }
-        void OpcodesHandler::DT_OX67(uint8_t) { // LD H, A
-            cpu.H = cpu.A;
-            cpu.PC++;
-            debug_log << "LD H, A" << std::endl;
-            cycles = 4;
-        }
-        void OpcodesHandler::DT_OX6F(uint8_t) { // LD L, A
-            cpu.L = cpu.A;
-            cpu.PC++;
-            debug_log << "LD L, A" << std::endl;
-            cycles = 4;
-        }
 
+void OpcodesHandler::updateFlagsAdc(uint8_t a, uint8_t b, uint16_t result) {
+    uint8_t res8 = (uint8_t)result;
+    uint8_t carry = (cpu.F & Z80A::C_BIT) ? 1 : 0;
+    cpu.F = 0;
+    if (res8 & 0x80) cpu.F |= Z80A::S_BIT;
+    if (res8 == 0) cpu.F |= Z80A::Z_BIT;
+    if ((a & 0x0F) + (b & 0x0F) + carry > 0x0F) cpu.F |= Z80A::H_BIT;
+    if (((a ^ res8) & (b ^ res8) & 0x80)) cpu.F |= Z80A::P_BIT;
+    if (result > 0xFF) cpu.F |= Z80A::C_BIT;
+}
 
+void OpcodesHandler::updateFlagsSbc(uint8_t a, uint8_t b, uint16_t result) {
+    uint8_t res8 = (uint8_t)result;
+    uint8_t carry = (cpu.F & Z80A::C_BIT) ? 1 : 0;
+    cpu.F = Z80A::N_BIT;
+    if (res8 & 0x80) cpu.F |= Z80A::S_BIT;
+    if (res8 == 0) cpu.F |= Z80A::Z_BIT;
+    if ((a & 0x0F) < (b & 0x0F) + carry) cpu.F |= Z80A::H_BIT;
+    if (((a ^ b) & (a ^ res8) & 0x80)) cpu.F |= Z80A::P_BIT;
+    if (result > 0xFF) cpu.F |= Z80A::C_BIT;
+}
 
-void OpcodesHandler::handleArithmetic(uint8_t opcode) {
+int OpcodesHandler::handleCB(uint8_t opcode) {
+    uint8_t regIndex = opcode & 0x07;
+    uint8_t bit = (opcode >> 3) & 0x07;
+    uint8_t category = (opcode >> 6) & 0x03;
+
+    auto getReg = [&](uint8_t index) -> uint8_t {
+        switch(index) {
+            case 0: return cpu.B; case 1: return cpu.C; case 2: return cpu.D;
+            case 3: return cpu.E; case 4: return cpu.H; case 5: return cpu.L;
+            case 6: return readMemory(cpu.getHL());
+            default: return cpu.A;
+        }
+    };
+
+    auto setReg = [&](uint8_t index, uint8_t val) {
+        switch(index) {
+            case 0: cpu.B = val; break; case 1: cpu.C = val; break;
+            case 2: cpu.D = val; break; case 3: cpu.E = val; break;
+            case 4: cpu.H = val; break; case 5: cpu.L = val; break;
+            case 6: writeMemory(cpu.getHL(), val); break;
+            default: cpu.A = val; break;
+        }
+    };
+
+    if (category == 1) { // BIT n, r
+        uint8_t val = getReg(regIndex);
+        cpu.F &= ~(Z80A::N_BIT | Z80A::Z_BIT);
+        cpu.F |= Z80A::H_BIT;
+        if (!(val & (1 << bit))) cpu.F |= Z80A::Z_BIT;
+        // Sign flag is set if bit 7 is tested and is 1
+        if (bit == 7 && (val & 0x80)) cpu.F |= Z80A::S_BIT; else cpu.F &= ~Z80A::S_BIT;
+        return (regIndex == 6) ? 12 : 8;
+    } 
+    else if (category == 2) { // RES n, r
+        setReg(regIndex, getReg(regIndex) & ~(1 << bit));
+        return (regIndex == 6) ? 15 : 8;
+    } 
+    else if (category == 3) { // SET n, r
+        setReg(regIndex, getReg(regIndex) | (1 << bit));
+        return (regIndex == 6) ? 15 : 8;
+    }
+    else { // Category 0: Shifts and Rotates
+        uint8_t val = getReg(regIndex);
+        uint8_t opType = (opcode >> 3) & 0x07;
+        uint8_t old_carry = (cpu.F & Z80A::C_BIT);
+
+        switch(opType) {
+            case 0: { // RLC (Rotate Left Circular)
+                uint8_t c = val >> 7;
+                val = (val << 1) | c;
+                cpu.F = c ? Z80A::C_BIT : 0;
+                break;
+            }
+            case 1: { // RRC (Rotate Right Circular)
+                uint8_t c = val & 0x01;
+                val = (val >> 1) | (c << 7);
+                cpu.F = c ? Z80A::C_BIT : 0;
+                break;
+            }
+            case 2: { // RL (Rotate Left through Carry)
+                uint8_t c = val >> 7;
+                val = (val << 1) | (old_carry ? 1 : 0);
+                cpu.F = c ? Z80A::C_BIT : 0;
+                break;
+            }
+            case 3: { // RR (Rotate Right through Carry)
+                uint8_t c = val & 0x01;
+                val = (val >> 1) | (old_carry ? 0x80 : 0);
+                cpu.F = c ? Z80A::C_BIT : 0;
+                break;
+            }
+            case 4: { // SLA (Shift Left Arithmetic)
+                uint8_t c = val >> 7;
+                val <<= 1;
+                cpu.F = c ? Z80A::C_BIT : 0;
+                break;
+            }
+            case 5: { // SRA (Shift Right Arithmetic)
+                uint8_t c = val & 0x01;
+                val = (val & 0x80) | (val >> 1); // Keep bit 7
+                cpu.F = c ? Z80A::C_BIT : 0;
+                break;
+            }
+            case 7: { // SRL (Shift Right Logical)
+                uint8_t c = val & 0x01;
+                val >>= 1;
+                cpu.F = c ? Z80A::C_BIT : 0;
+                break;
+            }
+        }
+        updateSZP(val); // Standard update for S, Z, P flags after shifts
+        cpu.F &= ~(Z80A::H_BIT | Z80A::N_BIT); // H and N always cleared
+        setReg(regIndex, val);
+        return (regIndex == 6) ? 15 : 8;
+    }
+}
+
+int OpcodesHandler::handleED(uint8_t opcode) {
     switch (opcode) {
-        case 0x80: { // ADD A, B
-            uint16_t result = cpu.A + cpu.B;
-            cpu.F = (result & 0xFF) == 0 ? 0x80 : 0;
-            cpu.F |= (result > 0xFF) ? 0x10 : 0;
-            cpu.A = result & 0xFF;
-            cpu.PC++;
-            debug_log << "ADD A, B" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0x83: { // ADD A, E
-            uint16_t result = cpu.A + cpu.E;
-            cpu.F = (result & 0xFF) == 0 ? 0x80 : 0;
-            cpu.F |= (result > 0xFF) ? 0x10 : 0;
-            cpu.A = result & 0xFF;
-            cpu.PC++;
-            debug_log << "ADD A, E" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0x86: { // ADD A, (HL)
-            uint16_t addr = cpu.getHL();
-            uint8_t value = readMemory(addr);
-            uint16_t result = cpu.A + value;
-            cpu.F = (result & 0xFF) == 0 ? 0x80 : 0;
-            cpu.F |= (result > 0xFF) ? 0x10 : 0;
-            cpu.A = result & 0xFF;
-            cpu.PC++;
-            debug_log << "ADD A, (HL=0x" << std::hex << addr << ") = 0x" << (int)value << std::dec << std::endl;
-            cycles = 7;
-            break;
-        }
-        case 0x90: { // SUB B
-            int16_t result = cpu.A - cpu.B;
-            cpu.F = (result & 0xFF) == 0 ? 0x80 : 0;
-            cpu.F |= (result < 0) ? 0x10 : 0;
-            cpu.A = result & 0xFF;
-            cpu.PC++;
-            debug_log << "SUB B" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0xD6: { // SUB n
-            uint8_t value = readMemory(cpu.PC + 1);
-            int16_t result = cpu.A - value;
-            cpu.F = (result & 0xFF) == 0 ? 0x80 : 0;
-            cpu.F |= (result < 0) ? 0x10 : 0;
-            cpu.A = result & 0xFF;
-            cpu.PC += 2;
-            debug_log << "SUB 0x" << std::hex << (int)value << std::dec << std::endl;
-            cycles = 7;
-            break;
-        }
-        case 0xC6: { // ADD A, n
-            uint8_t value = readMemory(cpu.PC + 1);
-            uint16_t result = cpu.A + value;
-            cpu.F = (result & 0xFF) == 0 ? 0x80 : 0;
-            cpu.F |= (result > 0xFF) ? 0x10 : 0;
-            cpu.A = result & 0xFF;
-            cpu.PC += 2;
-            debug_log << "ADD A, 0x" << std::hex << (int)value << std::dec << std::endl;
-            cycles = 7;
-            break;
-        }
-        case 0x3C: { // INC A
-            cpu.A++;
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            cpu.PC++;
-            debug_log << "INC A" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0x3D: { // DEC A
-            cpu.A--;
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            cpu.PC++;
-            debug_log << "DEC A" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0x04: { // INC B
-            cpu.B++;
-            cpu.F = (cpu.B == 0) ? 0x80 : 0;
-            cpu.PC++;
-            debug_log << "INC B" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0x0C: { // INC C
-            cpu.C++;
-            cpu.F = (cpu.C == 0) ? 0x80 : 0;
-            cpu.PC++;
-            debug_log << "INC C" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0x05: { // DEC B
-            cpu.B--;
-            cpu.F = (cpu.B == 0) ? 0x80 : 0;
-            cpu.PC++;
-            debug_log << "DEC B" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0x23: { // INC HL
-            uint16_t hl = cpu.getHL();
-            hl++;
-            cpu.setHL(hl);
-            cpu.PC++;
-            debug_log << "INC HL" << std::endl;
-            cycles = 6;
-            break;
-        }
-        case 0x03: { // INC BC
-            uint16_t bc = cpu.getBC();
-            bc++;
-            cpu.setBC(bc);
-            cpu.PC++;
-            debug_log << "INC BC" << std::endl;
-            cycles = 6;
-            break;
-        }
-        case 0x24: { // INC H
-            cpu.H++;
-            cpu.F = (cpu.H == 0) ? 0x80 : 0; // Zero flag
-            cpu.PC++;
-            debug_log << "INC H" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0xFE: { // CP n
-            uint8_t value = readMemory(cpu.PC + 1);
-            int16_t result = cpu.A - value;
-            cpu.F = (result & 0xFF) == 0 ? 0x80 : 0;
-            cpu.F |= (result < 0) ? 0x10 : 0;
-            cpu.PC += 2;
-            debug_log << "CP 0x" << std::hex << (int)value << std::dec << std::endl;
-            cycles = 7;
-            break;
-        }
-        case 0x93: { // SUB E
-            int16_t result = cpu.A - cpu.E;
-            cpu.F = (result & 0xFF) == 0 ? 0x80 : 0;
-            cpu.F |= (result < 0) ? 0x10 : 0;
-            cpu.A = result & 0xFF;
-            cpu.PC++;
-            debug_log << "SUB E" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0x7C: { // LD A, H
-            cpu.A = cpu.H;
-            cpu.PC++;
-            debug_log << "LD A, H" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0x9A: { // SBC A, D
-            int16_t result = cpu.A - cpu.D - ((cpu.F & 0x10) ? 1 : 0);
-            cpu.F = (result & 0xFF) == 0 ? 0x80 : 0;
-            cpu.F |= (result < 0) ? 0x10 : 0;
-            cpu.A = result & 0xFF;
-            cpu.PC++;
-            debug_log << "SBC A, D" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0xBE: { // CP (HL)
-            uint16_t addr = cpu.getHL();
-            uint8_t value = readMemory(addr);
-            int16_t result = cpu.A - value;
-            cpu.F = (result & 0xFF) == 0 ? 0x80 : 0;
-            cpu.F |= (result < 0) ? 0x10 : 0;
-            cpu.PC++;
-            debug_log << "CP (HL=0x" << std::hex << addr << ") = 0x" << (int)value << std::dec << std::endl;
-            cycles = 7;
-            break;
-        }
-        case 0x2C: { // INC L
-            uint8_t old_L = cpu.L;
-            cpu.L++;
-            cpu.F = (cpu.F & 0x10); // Preserve Carry flag
-            cpu.F |= (cpu.L == 0) ? 0x80 : 0; // Zero flag
-            cpu.F |= (cpu.L & 0x80) ? 0x40 : 0; // Sign flag
-            cpu.F |= ((old_L & 0x0F) == 0x0F) ? 0x20 : 0; // Half-Carry flag
-            cpu.F &= ~0x02; // Reset N flag
-            cpu.PC++;
-            debug_log << "INC L" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0x25: { // DEC H
-            uint8_t old_H = cpu.H;
-            cpu.H--;
-            cpu.F = (cpu.F & 0x10); // Preserve Carry flag
-            cpu.F |= (cpu.H == 0) ? 0x80 : 0; // Zero flag
-            cpu.F |= (cpu.H & 0x80) ? 0x40 : 0; // Sign flag
-            cpu.F |= ((old_H & 0x0F) == 0x00) ? 0x20 : 0; // Half-Carry flag
-            cpu.F |= 0x02; // Set N flag
-            cpu.PC++;
-            debug_log << "DEC H" << std::endl;
-            cycles = 4;
-            break;
-        }
-        default:
-            debug_log << "Unhandled arithmetic opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            cpu.PC++;
-            cycles = 4;
-    }
-}
-
-void OpcodesHandler::handleLogic(uint8_t opcode) {
-    switch (opcode) {
-        case 0xA0: { // AND B
-            cpu.A &= cpu.B;
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            cpu.PC++;
-            debug_log << "AND B" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0xA2: { // AND D
-            cpu.A &= cpu.D;
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            cpu.PC++;
-            debug_log << "AND D" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0xAF: { // XOR A
-            cpu.A ^= cpu.A;
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            cpu.PC++;
-            debug_log << "XOR A" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0xB0: { // OR B
-            cpu.A |= cpu.B;
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            cpu.PC++;
-            debug_log << "OR B" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0xE6: { // AND n
-            uint8_t value = readMemory(cpu.PC + 1);
-            cpu.A &= value;
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            cpu.PC += 2;
-            debug_log << "AND 0x" << std::hex << (int)value << std::dec << std::endl;
-            cycles = 7;
-            break;
-        }
-        case 0xEE: { // XOR n
-            uint8_t value = readMemory(cpu.PC + 1);
-            cpu.A ^= value;
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            cpu.PC += 2;
-            debug_log << "XOR 0x" << std::hex << (int)value << std::dec << std::endl;
-            cycles = 7;
-            break;
-        }
-        case 0xA8: { // XOR B
-            cpu.A ^= cpu.B;
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            cpu.PC++;
-            debug_log << "XOR B" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0x2F: { // CPL
-            cpu.A = ~cpu.A;
-            cpu.F |= 0x10; // Set N flag
-            cpu.F |= 0x20; // Set H flag
-            cpu.PC++;
-            debug_log << "CPL" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0xA7: { // AND A
-            cpu.A &= cpu.A;
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            cpu.PC++;
-            debug_log << "AND A" << std::endl;
-            cycles = 4;
-            break;
-        }
-        default:
-            debug_log << "Unhandled logic opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            cpu.PC++;
-            cycles = 4;
-    }
-}
-
-void OpcodesHandler::handleControlFlow(uint8_t opcode) {
-    switch (opcode) {
-        case 0xC3: { // JP nn
-            uint16_t addr = (readMemory(cpu.PC + 2) << 8) | readMemory(cpu.PC + 1);
-            cpu.PC = addr;
-            debug_log << "JP 0x" << std::hex << addr << std::dec << std::endl;
-            cycles = 10;
-            break;
-        }
-        case 0xCD: { // CALL
-            uint16_t addr = (readMemory(cpu.PC + 2) << 8) | readMemory(cpu.PC + 1);
-            cpu.last_call_return = cpu.PC + 3;
-            writeMemory(--cpu.SP, (cpu.PC + 3) & 0xFF);
-            writeMemory(--cpu.SP, (cpu.PC + 3) >> 8);
-            cpu.PC = addr;
-            cycles = 17;
-            break;
-        }
-        case 0xC9: { // RET
-            uint16_t addr = (readMemory(cpu.SP + 1) << 8) | readMemory(cpu.SP);
-            if (cpu.SP < 0xfffc || addr == 0x0000) {
-                addr = cpu.last_call_return;
-                debug_log << "RET: Fallback to last call return address" << std::endl;
-            }
+        case 0x4D: { // RETI (Return from Interrupt)
+            cpu.PC = read16(cpu.SP);
             cpu.SP += 2;
-            debug_log << "RET: SP=0x" << std::hex << (int)(cpu.SP - 2)
-                      << ", Stack[SP]=0x" << (int)readMemory(cpu.SP - 2)
-                      << " 0x" << (int)readMemory(cpu.SP - 1) << std::dec << std::endl;
-            debug_log << "RET to 0x" << std::hex << addr << ", SP=0x" << (int)cpu.SP << std::dec
-                      << std::endl;
-            cpu.PC = addr;
-            cycles = 10;
-            break;
+            return 14;
         }
-        case 0xF0: { // RET P
-            bool sign = (cpu.F & 0x80) == 0;
-            if (sign) {
-                uint16_t addr = (readMemory(cpu.SP + 1) << 8) | readMemory(cpu.SP);
-                cpu.SP += 2;
-                cpu.PC = addr;
-                debug_log << "RET P to 0x" << std::hex << addr << std::dec << std::endl;
-                cycles = 11;
-            } else {
-                cpu.PC++;
-                debug_log << "RET P skipped (sign flag set)" << std::endl;
-                cycles = 5;
+        case 0x56: return 8; // IM 1 (Common for MSX)
+        case 0xB0: { // LDIR
+            writeMemory(cpu.getDE(), readMemory(cpu.getHL()));
+            cpu.setHL(cpu.getHL() + 1);
+            cpu.setDE(cpu.getDE() + 1);
+            cpu.setBC(cpu.getBC() - 1);
+            if (cpu.getBC() != 0) {
+                cpu.PC -= 2;
+                return 21;
             }
-            break;
+            return 16;
         }
-        case 0xCF: { // RST 08H
+        case 0x73: { // LD (nn), SP
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            writeMemory(addr, cpu.SP & 0xFF);
+            writeMemory(addr + 1, cpu.SP >> 8);
+            return 20;
+        }
+        case 0x7B: { // LD SP, (nn)
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            cpu.SP = read16(addr);
+            return 20;
+        }
+        default:
+            debug_log << "Unimplemented ED Opcode: 0x" << std::hex << (int)opcode << std::endl;
+            return 8;
+    }
+}
+
+int OpcodesHandler::handleIX(uint8_t opcode) {
+    switch (opcode) {
+        case 0x21: { // LD IX, nn
+            cpu.IX = read16(cpu.PC);
+            cpu.PC += 2;
+            return 14;
+        }
+        case 0x2A: { // LD IX, (nn)
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            cpu.IX = read16(addr);
+            return 20;
+        }
+        case 0x36: { // LD (IX+d), n
+            int8_t d = (int8_t)readMemory(cpu.PC++);
+            uint8_t n = readMemory(cpu.PC++);
+            writeMemory(cpu.IX + d, n);
+            return 19;
+        }
+        case 0x7E: { // LD A, (IX+d)
+            int8_t d = (int8_t)readMemory(cpu.PC++);
+            cpu.A = readMemory(cpu.IX + d);
+            return 19;
+        }
+        case 0x19: { // ADD IX, DE
+            uint32_t res = (uint32_t)cpu.IX + cpu.getDE();
+            cpu.F &= ~(Z80A::N_BIT | Z80A::H_BIT | Z80A::C_BIT);
+            if (((cpu.IX & 0x0FFF) + (cpu.getDE() & 0x0FFF)) & 0x1000) cpu.F |= Z80A::H_BIT;
+            if (res & 0x10000) cpu.F |= Z80A::C_BIT;
+            cpu.IX = res & 0xFFFF;
+            return 15;
+        }
+        case 0xE1: { // POP IX
+            cpu.IX = readMemory(cpu.SP) | (readMemory(cpu.SP + 1) << 8);
+            cpu.SP += 2;
+            return 14;
+        }
+        case 0xE5: { // PUSH IX
             cpu.SP -= 2;
-            writeMemory(cpu.SP + 1, (cpu.PC >> 8) & 0xFF);
-            writeMemory(cpu.SP, cpu.PC & 0xFF);
-            cpu.PC = 0x0008;
-            debug_log << "RST 08H" << std::endl;
-            cycles = 11;
-            break;
+            writeMemory(cpu.SP, cpu.IX & 0xFF);
+            writeMemory(cpu.SP + 1, cpu.IX >> 8);
+            return 15;
         }
-        case 0xFF: { // RST 38H
+        case 0xE9: { // JP (IX)
+            cpu.PC = cpu.IX;
+            return 8;
+        }
+        default:
+            debug_log << "Unimplemented IX Opcode: 0x" << std::hex << (int)opcode << std::endl;
+            return 4;
+    }
+}
+
+int OpcodesHandler::handleIY(uint8_t opcode) {
+    switch (opcode) {
+        case 0x21: { // LD IY, nn
+            cpu.IY = read16(cpu.PC);
+            cpu.PC += 2;
+            return 14;
+        }
+        case 0x2A: { // LD IY, (nn)
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            cpu.IY = read16(addr);
+            return 20;
+        }
+        case 0x7E: { // LD A, (IY+d)
+            int8_t d = (int8_t)readMemory(cpu.PC++);
+            cpu.A = readMemory(cpu.IY + d);
+            return 19;
+        }
+        case 0xE1: { // POP IY
+            cpu.IY = readMemory(cpu.SP) | (readMemory(cpu.SP + 1) << 8);
+            cpu.SP += 2;
+            return 14;
+        }
+        case 0xE5: { // PUSH IY
             cpu.SP -= 2;
-            writeMemory(cpu.SP + 1, (cpu.PC >> 8) & 0xFF);
-            writeMemory(cpu.SP, cpu.PC & 0xFF);
-            cpu.PC = 0x0038;
-            cpu.interruptPending = false;
-            debug_log << "RST 38H" << std::endl;
-            cycles = 11;
+            writeMemory(cpu.SP, cpu.IY & 0xFF);
+            writeMemory(cpu.SP + 1, cpu.IY >> 8);
+            return 15;
+        }
+        default:
+            debug_log << "Unimplemented IY Opcode: 0x" << std::hex << (int)opcode << std::endl;
+            return 4;
+    }
+}
+
+void OpcodesHandler::executeOpcode(uint8_t opcode) {
+    cycles = 4; // Default
+
+    switch (opcode) {
+        case 0x00: break; // NOP
+        
+        case 0xCB: { // Prefix CB
+            uint8_t cb_opcode = readMemory(cpu.PC++);
+            cycles = handleCB(cb_opcode);
             break;
         }
-        case 0xF3: { // DI
-            debug_log << "DI (Interrupts disabled)" << std::endl;
+        
+        case 0xED: { // Prefix ED
+            uint8_t ed_opcode = readMemory(cpu.PC++);
+            cycles = handleED(ed_opcode);
+            break;
+        }
+
+        case 0xDD: { // Prefix DD (IX)
+            uint8_t ix_opcode = readMemory(cpu.PC++);
+            cycles = handleIX(ix_opcode);
+            break;
+        }
+
+        case 0xFD: { // Prefix FD (IY)
+            uint8_t iy_opcode = readMemory(cpu.PC++);
+            cycles = handleIY(iy_opcode);
+            break;
+        }
+
+        case 0x08: { // EX AF, AF'
+            uint8_t temp_a = cpu.A;
+            uint8_t temp_f = cpu.F;
+            cpu.A = cpu.A_;
+            cpu.F = cpu.F_;
+            cpu.A_ = temp_a;
+            cpu.F_ = temp_f;
             cycles = 4;
             break;
         }
-        case 0xFB: { // EI
-            debug_log << "EI (Interrupts enabled)" << std::endl;
-            cycles = 4;
-            break;
-        }
-        case 0x20: { // JR NZ, e
-            int8_t offset = readMemory(cpu.PC + 1);
-            if (!(cpu.F & 0x80)) {
-                cpu.PC += offset + 2;
-                debug_log << "JR NZ, 0x" << std::hex << (int)offset << std::dec << std::endl;
-                cycles = 12;
-            } else {
-                cpu.PC += 2;
-                debug_log << "JR NZ skipped (Z flag set)" << std::endl;
-                cycles = 7;
-            }
-            break;
-        }
-        case 0x28: { // JR Z, e
-            int8_t offset = readMemory(cpu.PC + 1);
-            if (cpu.F & 0x80) {
-                cpu.PC += offset + 2;
-                debug_log << "JR Z, 0x" << std::hex << (int)offset << std::dec << std::endl;
-                cycles = 12;
-            } else {
-                cpu.PC += 2;
-                debug_log << "JR Z skipped (Z flag not set)" << std::endl;
-                cycles = 7;
-            }
-            break;
-        }
-        case 0x38: { // JR C, e
-            int8_t offset = readMemory(cpu.PC + 1);
-            if (cpu.F & 0x10) {
-                cpu.PC += offset + 2;
-                debug_log << "JR C, 0x" << std::hex << (int)offset << std::dec << std::endl;
-                cycles = 12;
-            } else {
-                cpu.PC += 2;
-                debug_log << "JR C skipped (C flag not set)" << std::endl;
-                cycles = 7;
-            }
-            break;
-        }
+
         case 0x10: { // DJNZ e
-            int8_t offset = readMemory(cpu.PC + 1);
+            int8_t offset = (int8_t)readMemory(cpu.PC++);
             cpu.B--;
             if (cpu.B != 0) {
-                cpu.PC += offset + 2;
-                debug_log << "DJNZ 0x" << std::hex << (int)offset << std::dec << std::endl;
+                cpu.PC += offset;
                 cycles = 13;
             } else {
-                cpu.PC += 2;
-                debug_log << "DJNZ skipped (B=0)" << std::endl;
                 cycles = 8;
             }
             break;
         }
+
+        case 0xEB: { // EX DE, HL
+            uint16_t de = cpu.getDE();
+            uint16_t hl = cpu.getHL();
+            cpu.setDE(hl);
+            cpu.setHL(de);
+            cycles = 4;
+            break;
+        }
+
         case 0xD9: { // EXX
-            std::swap(cpu.B, cpu.B_);
-            std::swap(cpu.C, cpu.C_);
-            std::swap(cpu.D, cpu.D_);
-            std::swap(cpu.E, cpu.E_);
-            std::swap(cpu.H, cpu.H_);
-            std::swap(cpu.L, cpu.L_);
-            cpu.PC++;
-            debug_log << "EXX" << std::endl;
+            uint16_t b_temp = cpu.B, c_temp = cpu.C, d_temp = cpu.D, e_temp = cpu.E, h_temp = cpu.H, l_temp = cpu.L;
+            cpu.B = cpu.B_; cpu.C = cpu.C_; cpu.D = cpu.D_; cpu.E = cpu.E_; cpu.H = cpu.H_; cpu.L = cpu.L_;
+            cpu.B_ = b_temp; cpu.C_ = c_temp; cpu.D_ = d_temp; cpu.E_ = e_temp; cpu.H_ = h_temp; cpu.L_ = l_temp;
             cycles = 4;
             break;
         }
-        case 0x08: { // EX AF, AF'
-            uint8_t tempA = cpu.A;
-            uint8_t tempF = cpu.F;
-            cpu.A = cpu.A_;
-            cpu.F = cpu.F_;
-            cpu.A_ = tempA;
-            cpu.F_ = tempF;
-            cpu.PC++;
-            debug_log << "EX AF, AF'" << std::endl;
+
+        // RST Instructions
+        case 0xC7: // RST 00h
+        case 0xCF: // RST 08h
+        case 0xD7: // RST 10h
+        case 0xDF: // RST 18h
+        case 0xE7: // RST 20h
+        case 0xEF: // RST 28h
+        case 0xF7: // RST 30h
+        case 0xFF: // RST 38h
+        {
+            cpu.SP -= 2;
+            writeMemory(cpu.SP, cpu.PC & 0xFF);
+            writeMemory(cpu.SP + 1, cpu.PC >> 8);
+            cpu.PC = opcode & 0x38;
+            cycles = 11;
+            break;
+        }
+
+        case 0x07: { // RLCA
+            uint8_t c = cpu.A >> 7;
+            cpu.A = (cpu.A << 1) | c;
+            cpu.F &= ~(Z80A::H_BIT | Z80A::N_BIT | Z80A::C_BIT);
+            if (c) cpu.F |= Z80A::C_BIT;
             cycles = 4;
             break;
         }
-        case 0xDD: { // IX prefix
-            uint8_t next = readMemory(cpu.PC + 1);
-            if (next == 0xE5) { // PUSH IX
-                cpu.SP -= 2;
-                writeMemory(cpu.SP + 1, (cpu.IX >> 8) & 0xFF);
-                writeMemory(cpu.SP, cpu.IX & 0xFF);
-                debug_log << "PUSH IX" << std::endl;
-                cpu.PC += 2;
-                cycles = 15;
-            }
+
+        case 0x0F: { // RRCA
+            uint8_t c = cpu.A & 0x01;
+            cpu.A = (cpu.A >> 1) | (c << 7);
+            cpu.F &= ~(Z80A::H_BIT | Z80A::N_BIT | Z80A::C_BIT);
+            if (c) cpu.F |= Z80A::C_BIT;
+            cycles = 4;
             break;
         }
-        case 0xF6: { // OR n
-            uint8_t n = readMemory(cpu.PC + 1);
-            cpu.A |= n;
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            if (cpu.A & 0x08) cpu.F |= 0x20;
-            debug_log << "OR " << std::hex << (int)n << std::dec << std::endl;
-            cpu.PC += 2;
+
+        case 0x17: { // RLA
+            uint8_t c = cpu.A >> 7;
+            cpu.A = (cpu.A << 1) | ((cpu.F & Z80A::C_BIT) ? 1 : 0);
+            cpu.F &= ~(Z80A::H_BIT | Z80A::N_BIT | Z80A::C_BIT);
+            if (c) cpu.F |= Z80A::C_BIT;
+            cycles = 4;
+            break;
+        }
+
+        case 0x1F: { // RRA
+            uint8_t c = cpu.A & 0x01;
+            cpu.A = (cpu.A >> 1) | ((cpu.F & Z80A::C_BIT) ? 0x80 : 0);
+            cpu.F &= ~(Z80A::H_BIT | Z80A::N_BIT | Z80A::C_BIT);
+            if (c) cpu.F |= Z80A::C_BIT;
+            cycles = 4;
+            break;
+        }
+
+        case 0x3E: { // LD A, n
+            cpu.A = readMemory(cpu.PC++);
             cycles = 7;
             break;
         }
-        case 0x30: { // JR NC, e
-            int8_t offset = readMemory(cpu.PC + 1);
-            if (!(cpu.F & 0x10)) {
-                cpu.PC += offset + 2;
-                debug_log << "JR NC, 0x" << std::hex << (int)offset << std::dec << std::endl;
+
+        case 0xF9: { // LD SP, HL
+          cpu.SP = cpu.getHL();
+          cycles = 6;
+          break;
+        }
+
+        case 0x02: { // LD (BC), A
+            writeMemory(cpu.getBC(), cpu.A);
+            cycles = 7;
+            break;
+        }
+        case 0x12: { // LD (DE), A
+            writeMemory(cpu.getDE(), cpu.A);
+            cycles = 7;
+            break;
+        }
+        case 0x0A: { // LD A, (BC)
+            cpu.A = readMemory(cpu.getBC());
+            cycles = 7;
+            break;
+        }
+        case 0x1A: { // LD A, (DE)
+            cpu.A = readMemory(cpu.getDE());
+            cycles = 7;
+            break;
+        }
+
+        case 0xC2: { // JP NZ, nn
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            if (!(cpu.F & Z80A::Z_BIT)) cpu.PC = addr;
+            cycles = 10;
+            break;
+        }
+        case 0xCA: { // JP Z, nn
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            if (cpu.F & Z80A::Z_BIT) cpu.PC = addr;
+            cycles = 10;
+            break;
+        }
+        case 0xD2: { // JP NC, nn
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            if (!(cpu.F & Z80A::C_BIT)) cpu.PC = addr;
+            cycles = 10;
+            break;
+        }
+        case 0xDA: { // JP C, nn
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            if (cpu.F & Z80A::C_BIT) cpu.PC = addr;
+            cycles = 10;
+            break;
+        }
+        case 0xF2: { // JP P, nn
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            if (!(cpu.F & Z80A::S_BIT)) cpu.PC = addr;
+            cycles = 10;
+            break;
+        }
+        case 0xFA: { // JP M, nn
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            if (cpu.F & Z80A::S_BIT) cpu.PC = addr;
+            cycles = 10;
+            break;
+        }
+
+        case 0xC4: { // CALL NZ, nn
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            if (!(cpu.F & Z80A::Z_BIT)) {
+                cpu.SP -= 2;
+                writeMemory(cpu.SP, cpu.PC & 0xFF);
+                writeMemory(cpu.SP + 1, cpu.PC >> 8);
+                cpu.PC = addr;
+                cycles = 17;
+            } else {
+                cycles = 10;
+            }
+            break;
+        }
+        case 0xDC: { // CALL C, nn
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            if (cpu.F & Z80A::C_BIT) {
+                cpu.SP -= 2;
+                writeMemory(cpu.SP, cpu.PC & 0xFF);
+                writeMemory(cpu.SP + 1, cpu.PC >> 8);
+                cpu.PC = addr;
+                cycles = 17;
+            } else {
+                cycles = 10;
+            }
+            break;
+        }
+        case 0xFC: { // CALL M, nn
+            uint16_t addr = read16(cpu.PC);
+            cpu.PC += 2;
+            if (cpu.F & Z80A::S_BIT) {
+                cpu.SP -= 2;
+                writeMemory(cpu.SP, cpu.PC & 0xFF);
+                writeMemory(cpu.SP + 1, cpu.PC >> 8);
+                cpu.PC = addr;
+                cycles = 17;
+            } else {
+                cycles = 10;
+            }
+            break;
+        }
+
+        case 0xC3: { // JP nn (Absolute Jump)
+            cpu.PC = read16(cpu.PC);
+            cycles = 10;
+            break;
+        }
+
+        case 0x21: { // LD HL, nn
+            cpu.setHL(read16(cpu.PC));
+            cpu.PC += 2;
+            cycles = 10;
+            break;
+        }
+
+        case 0x18: { // JR e (Relative Jump)
+            int8_t offset = (int8_t)readMemory(cpu.PC++);
+            cpu.PC += offset;
+            cycles = 12;
+            break;
+        }
+
+        case 0x20: { // JR NZ, e
+            int8_t offset = (int8_t)readMemory(cpu.PC++);
+            if (!(cpu.F & Z80A::Z_BIT)) {
+                cpu.PC += offset;
                 cycles = 12;
             } else {
-                cpu.PC += 2;
-                debug_log << "JR NC skipped (C flag set)" << std::endl;
                 cycles = 7;
             }
             break;
         }
-        case 0xEB: { // EX DE, HL
-            uint8_t tempD = cpu.D;
-            uint8_t tempE = cpu.E;
-            cpu.D = cpu.H;
-            cpu.E = cpu.L;
-            cpu.H = tempD;
-            cpu.L = tempE;
-            cpu.PC++;
-            debug_log << "EX DE, HL" << std::endl;
-            cycles = 4;
+
+        case 0x28: { // JR Z, e
+          int8_t offset = (int8_t)readMemory(cpu.PC++);
+          if (cpu.F & Z80A::Z_BIT) {
+            cpu.PC += offset;
+            cycles = 12;
+          } else {
+            cycles = 7;
+          }
+          break;
+        }
+
+        case 0x30: { // JR NC, e
+            int8_t offset = (int8_t)readMemory(cpu.PC++);
+            if (!(cpu.F & Z80A::C_BIT)) {
+                cpu.PC += offset;
+                cycles = 12;
+            } else {
+                cycles = 7;
+            }
             break;
         }
-        default:
-            debug_log << "Unhandled control flow opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            cpu.PC++;
-            cycles = 4;
-    }
-}
 
-void OpcodesHandler::handleIO(uint8_t opcode) {
-    switch (opcode) {
-        case 0xD3: { // OUT (n), A
-            uint8_t port = readMemory(cpu.PC + 1);
-            writeIO(port, cpu.A);
+        case 0x38: { // JR C, e
+            int8_t offset = (int8_t)readMemory(cpu.PC++);
+            if (cpu.F & Z80A::C_BIT) {
+                cpu.PC += offset;
+                cycles = 12;
+            } else {
+                cycles = 7;
+            }
+            break;
+        }
+
+        case 0x22: { // LD (nn), HL
+            uint16_t addr = read16(cpu.PC);
             cpu.PC += 2;
-            debug_log << "OUT (0x" << std::hex << (int)port << "), A (0x" << (int)cpu.A << ")" << std::dec << std::endl;
-            cycles = 11;
+            writeMemory(addr, cpu.L);
+            writeMemory(addr + 1, cpu.H);
+            cycles = 16;
             break;
         }
-        case 0xDB: { // IN A, (n)
-            uint8_t port = readMemory(cpu.PC + 1);
-            cpu.A = readIO(port);
+
+        case 0x2A: { // LD HL, (nn)
+            uint16_t addr = read16(cpu.PC);
             cpu.PC += 2;
-            debug_log << "IN A, (0x" << std::hex << (int)port << ") = 0x" << (int)cpu.A << std::dec << std::endl;
-            cycles = 11;
+            cpu.L = readMemory(addr);
+            cpu.H = readMemory(addr + 1);
+            cycles = 16;
             break;
         }
-        default:
-            debug_log << "Unhandled I/O opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            cpu.PC++;
-            cycles = 4;
-    }
-}
 
-void OpcodesHandler::handleBitManip(uint8_t opcode) {
-    switch (opcode) {
-        case 0x07: { // RLCA
-            uint8_t carry = (cpu.A & 0x80) ? 0x10 : 0;
-            cpu.A = (cpu.A << 1) | (carry ? 1 : 0);
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            cpu.F |= carry;
-            cpu.PC++;
-            debug_log << "RLCA" << std::endl;
+        case 0x2F: { // CPL (Complement A)
+            cpu.A = ~cpu.A;
+            cpu.F |= (Z80A::H_BIT | Z80A::N_BIT);
             cycles = 4;
             break;
         }
-        case 0x0F: { // RRCA
-            uint8_t carry = (cpu.A & 0x01) ? 0x10 : 0;
-            cpu.A = (cpu.A >> 1) | (carry ? 0x80 : 0);
-            cpu.F = (cpu.A == 0) ? 0x80 : 0;
-            cpu.F |= carry;
-            cpu.PC++;
-            debug_log << "RRCA" << std::endl;
-            cycles = 4;
-            break;
-        }
-        default:
-            debug_log << "Unhandled bit manipulation opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            cpu.PC++;
-            cycles = 4;
-    }
-}
 
-void OpcodesHandler::handleStack(uint8_t opcode) {
-    switch (opcode) {
-        case 0xC5: { // PUSH BC
-            cpu.SP -= 2;
-            writeMemory(cpu.SP + 1, cpu.B);
-            writeMemory(cpu.SP, cpu.C);
-            cpu.PC++;
-            debug_log << "PUSH BC" << std::endl;
-            cycles = 11;
-            break;
-        }
-        case 0xC1: { // POP BC
-            cpu.C = readMemory(cpu.SP);
-            cpu.B = readMemory(cpu.SP + 1);
-            cpu.SP += 2;
-            cpu.PC++;
-            debug_log << "POP BC" << std::endl;
+        case 0x36: { // LD (HL), n
+            uint8_t n = readMemory(cpu.PC++);
+            writeMemory(cpu.getHL(), n);
             cycles = 10;
             break;
         }
-        case 0xD1: { // POP DE
-            cpu.E = readMemory(cpu.SP);
-            cpu.D = readMemory(cpu.SP + 1);
-            cpu.SP += 2;
-            cpu.PC++;
-            debug_log << "POP DE" << std::endl;
-            cycles = 10;
-            break;
+
+        case 0xCD: {  // CALL nn 
+          uint16_t dest = read16(cpu.PC);
+          cpu.PC += 2;
+          // Push current PC onto stack
+          cpu.SP -= 2;
+          writeMemory(cpu.SP, cpu.PC & 0xFF);      // Low Byte 
+          writeMemory(cpu.SP + 1, (cpu.PC >> 8));  // High Byte 
+          cpu.PC = dest;
+          cycles = 17;
+          break;
         }
-        case 0xE5: { // PUSH HL
-            uint16_t hl = cpu.getHL();
-            cpu.SP -= 2;
-            writeMemory(cpu.SP + 1, (hl >> 8) & 0xFF);
-            writeMemory(cpu.SP, hl & 0xFF);
-            cpu.PC++;
-            debug_log << "PUSH HL" << std::endl;
-            cycles = 11;
-            break;
+
+        case 0x31: { // LD SP, nn 
+          cpu.SP = read16(cpu.PC);
+          cpu.PC += 2;
+          cycles = 10;
+          break;
         }
-        case 0xE1: { // POP HL
-            uint8_t l = readMemory(cpu.SP);
-            uint8_t h = readMemory(cpu.SP + 1);
-            cpu.setHL((h << 8) | l);
-            cpu.SP += 2;
-            cpu.PC++;
-            debug_log << "POP HL" << std::endl;
-            cycles = 10;
-            break;
+
+        case 0x01: {  // LD BC, nn 
+          cpu.setBC(read16(cpu.PC));
+          cpu.PC += 2;
+          cycles = 10;
+          break;
         }
-        case 0xF1: { // POP AF
-            cpu.F = readMemory(cpu.SP);
-            cpu.A = readMemory(cpu.SP + 1);
-            cpu.SP += 2;
-            cpu.PC++;
-            debug_log << "POP AF, SP=0x" << std::hex << cpu.SP << ", read F=0x" << (int)cpu.F << ", A=0x" << (int)cpu.A << std::dec << std::endl;
-            cycles = 10;
-            break;
+
+        case 0x11: {  // LD DE, nn
+          cpu.setDE(read16(cpu.PC));
+          cpu.PC += 2;
+          cycles = 10;
+          break;
         }
+
+        case 0xC5: {  // PUSH BC 
+          cpu.SP -= 2;
+          writeMemory(cpu.SP, cpu.C);
+          writeMemory(cpu.SP + 1, cpu.B);
+          cycles = 11;
+          break;
+        }
+
+        case 0xC1: {   // POP BC 
+          cpu.C = readMemory(cpu.SP);
+          cpu.B = readMemory(cpu.SP + 1);
+          cpu.SP += 2;
+          cycles = 10;
+          break;
+        }
+
+        case 0xD5: {  // PUSH DE
+          cpu.SP -= 2;
+          writeMemory(cpu.SP, cpu.E);
+          writeMemory(cpu.SP + 1, cpu.D);
+          cycles = 11;
+          break;
+        }
+
+        case 0xD1: {  // POP DE
+          cpu.E = readMemory(cpu.SP);
+          cpu.D = readMemory(cpu.SP + 1);
+          cpu.SP += 2;
+          cycles = 10;
+          break;
+        }
+
+        case 0xE5: {    // PUSH HL 
+          cpu.SP -= 2;
+          writeMemory(cpu.SP, cpu.L);
+          writeMemory(cpu.SP + 1, cpu.H);
+          cycles = 11;
+          break;
+        }
+
+        case 0xE1: {  // POP HL 
+          cpu.L = readMemory(cpu.SP);
+          cpu.H = readMemory(cpu.SP + 1);
+          cpu.SP += 2;
+          cycles = 10;
+          break;
+        }
+
         case 0xE3: { // EX (SP), HL
-            uint16_t sp_addr = cpu.SP;
-            uint8_t sp_h = cpu.memoryReadCallback(sp_addr + 1);
-            uint8_t sp_l = cpu.memoryReadCallback(sp_addr);
-            uint16_t hl = cpu.getHL();
-            uint8_t h = (hl >> 8) & 0xFF;
-            uint8_t l = hl & 0xFF;
-            cpu.memoryWriteCallback(sp_addr + 1, h);
-            cpu.memoryWriteCallback(sp_addr, l);
-            cpu.setHL((sp_h << 8) | sp_l);
-            debug_log << "EX (SP), HL: HL=0x" << std::hex << cpu.getHL() << std::dec << std::endl;
-            cycles = 19;
-            cpu.PC++;
-            break;
+          uint8_t low = readMemory(cpu.SP);
+          uint8_t high = readMemory(cpu.SP + 1);
+          writeMemory(cpu.SP, cpu.L);
+          writeMemory(cpu.SP + 1, cpu.H);
+          cpu.L = low;
+          cpu.H = high;
+          cycles = 19;
+          break;
         }
-        case 0xD5: { // PUSH DE
-            cpu.SP -= 2;
-            writeMemory(cpu.SP + 1, cpu.D);
-            writeMemory(cpu.SP, cpu.E);
-            cpu.PC++;
-            debug_log << "PUSH DE" << std::endl;
-            cycles = 11;
-            break;
-        }
+
         case 0xF5: { // PUSH AF
-            cpu.SP -= 2;
-            writeMemory(cpu.SP + 1, cpu.A);
-            writeMemory(cpu.SP, cpu.F);
-            cpu.PC++;
-            debug_log << "PUSH AF" << std::endl;
+           cpu.SP -= 2;
+           writeMemory(cpu.SP, cpu.F);      // Low Byte is Flags
+           writeMemory(cpu.SP + 1, cpu.A);  // High Byte is Accumulator
+           cycles = 11;
+           break;
+        }
+
+        case 0xF1: { // POP AF
+           cpu.F = readMemory(cpu.SP);      // Low Byte restores Flags
+           cpu.A = readMemory(cpu.SP + 1);  // High Byte restores Accumulator
+           cpu.SP += 2;
+           cycles = 10;
+           break;
+        }
+
+        case 0x06: {  // LD B, n 
+          cpu.B = readMemory(cpu.PC++);
+          cycles = 7;
+          break;
+        }
+
+        case 0x0E: {   // LD C, n 
+          cpu.C = readMemory(cpu.PC++);
+          cycles = 7;
+          break;
+        }
+
+        case 0x16: {   // LD D, n 
+          cpu.D = readMemory(cpu.PC++);
+          cycles = 7;
+          break;
+        }
+
+        case 0x1E: {   // LD E, n 
+          cpu.E = readMemory(cpu.PC++);
+          cycles = 7;
+          break;
+        }
+
+        case 0x26: {   // LD H, n 
+           cpu.H = readMemory(cpu.PC++);
+           cycles = 7;
+           break;
+        }
+
+        case 0x2E: {   // LD L, n 
+           cpu.L = readMemory(cpu.PC++);
+           cycles = 7;
+           break;
+        }
+
+        case 0x3A: {  // LD A, (nn)
+           uint16_t addr = read16(cpu.PC);
+           cpu.PC += 2;
+           cpu.A = readMemory(addr);
+           cycles = 13;
+           break;
+        }
+
+        case 0x32: {  // LD (nn), A 
+           uint16_t addr = read16(cpu.PC);
+           cpu.PC += 2;
+           writeMemory(addr, cpu.A);
+           cycles = 13;
+           break;
+        }
+
+        // --- LD r, r and LD r, (HL) ---
+        // B Row
+        case 0x40: { cpu.B = cpu.B; break; }
+        case 0x41: { cpu.B = cpu.C; break; }
+        case 0x42: { cpu.B = cpu.D; break; }
+        case 0x43: { cpu.B = cpu.E; break; }
+        case 0x44: { cpu.B = cpu.H; break; }
+        case 0x45: { cpu.B = cpu.L; break; }
+        case 0x46: { cpu.B = readMemory(cpu.getHL()); cycles = 7; break; }
+        case 0x47: { cpu.B = cpu.A; break; }
+        // C Row
+        case 0x48: { cpu.C = cpu.B; break; }
+        case 0x49: { cpu.C = cpu.C; break; }
+        case 0x4A: { cpu.C = cpu.D; break; }
+        case 0x4B: { cpu.C = cpu.E; break; }
+        case 0x4C: { cpu.C = cpu.H; break; }
+        case 0x4D: { cpu.C = cpu.L; break; }
+        case 0x4E: { cpu.C = readMemory(cpu.getHL()); cycles = 7; break; }
+        case 0x4F: { cpu.C = cpu.A; break; }
+        // D Row
+        case 0x50: { cpu.D = cpu.B; break; }
+        case 0x51: { cpu.D = cpu.C; break; }
+        case 0x52: { cpu.D = cpu.D; break; }
+        case 0x53: { cpu.D = cpu.E; break; }
+        case 0x54: { cpu.D = cpu.H; break; }
+        case 0x55: { cpu.D = cpu.L; break; }
+        case 0x56: { cpu.D = readMemory(cpu.getHL()); cycles = 7; break; }
+        case 0x57: { cpu.D = cpu.A; break; }
+        // E Row
+        case 0x58: { cpu.E = cpu.B; break; }
+        case 0x59: { cpu.E = cpu.C; break; }
+        case 0x5A: { cpu.E = cpu.D; break; }
+        case 0x5B: { cpu.E = cpu.E; break; }
+        case 0x5C: { cpu.E = cpu.H; break; }
+        case 0x5D: { cpu.E = cpu.L; break; }
+        case 0x5E: { cpu.E = readMemory(cpu.getHL()); cycles = 7; break; }
+        case 0x5F: { cpu.E = cpu.A; break; }
+        // H Row
+        case 0x60: { cpu.H = cpu.B; break; }
+        case 0x61: { cpu.H = cpu.C; break; }
+        case 0x62: { cpu.H = cpu.D; break; }
+        case 0x63: { cpu.H = cpu.E; break; }
+        case 0x64: { cpu.H = cpu.H; break; }
+        case 0x65: { cpu.H = cpu.L; break; }
+        case 0x66: { cpu.H = readMemory(cpu.getHL()); cycles = 7; break; }
+        case 0x67: { cpu.H = cpu.A; break; }
+        // L Row
+        case 0x68: { cpu.L = cpu.B; break; }
+        case 0x69: { cpu.L = cpu.C; break; }
+        case 0x6A: { cpu.L = cpu.D; break; }
+        case 0x6B: { cpu.L = cpu.E; break; }
+        case 0x6C: { cpu.L = cpu.H; break; }
+        case 0x6D: { cpu.L = cpu.L; break; }
+        case 0x6E: { cpu.L = readMemory(cpu.getHL()); cycles = 7; break; }
+        case 0x6F: { cpu.L = cpu.A; break; }
+        // (HL) Row
+        case 0x70: { writeMemory(cpu.getHL(), cpu.B); cycles = 7; break; }
+        case 0x71: { writeMemory(cpu.getHL(), cpu.C); cycles = 7; break; }
+        case 0x72: { writeMemory(cpu.getHL(), cpu.D); cycles = 7; break; }
+        case 0x73: { writeMemory(cpu.getHL(), cpu.E); cycles = 7; break; }
+        case 0x74: { writeMemory(cpu.getHL(), cpu.H); cycles = 7; break; }
+        case 0x75: { writeMemory(cpu.getHL(), cpu.L); cycles = 7; break; }
+        case 0x76: { cpu.halted = true; break; } // HALT
+        case 0x77: { writeMemory(cpu.getHL(), cpu.A); cycles = 7; break; }
+        // A Row
+        case 0x78: { cpu.A = cpu.B; break; }
+        case 0x79: { cpu.A = cpu.C; break; }
+        case 0x7A: { cpu.A = cpu.D; break; }
+        case 0x7B: { cpu.A = cpu.E; break; }
+        case 0x7C: { cpu.A = cpu.H; break; }
+        case 0x7D: { cpu.A = cpu.L; break; }
+        case 0x7E: { cpu.A = readMemory(cpu.getHL()); cycles = 7; break; }
+        case 0x7F: { cpu.A = cpu.A; break; }
+
+        // --- Arithmetic Group ---
+        case 0x80: { // ADD A, B
+            uint16_t res = (uint16_t)cpu.A + cpu.B;
+            updateFlagsAdd(cpu.A, cpu.B, res);
+            cpu.A = (uint8_t)res;
+            break;
+        }
+        case 0x81: { // ADD A, C
+            uint16_t res = (uint16_t)cpu.A + cpu.C;
+            updateFlagsAdd(cpu.A, cpu.C, res);
+            cpu.A = (uint8_t)res;
+            break;
+        }
+        case 0x82: { // ADD A, D
+            uint16_t res = (uint16_t)cpu.A + cpu.D;
+            updateFlagsAdd(cpu.A, cpu.D, res);
+            cpu.A = (uint8_t)res;
+            break;
+        }
+        case 0x83: { uint16_t res = (uint16_t)cpu.A + cpu.E; updateFlagsAdd(cpu.A, cpu.E, res); cpu.A = (uint8_t)res; break; }
+        case 0x84: { uint16_t res = (uint16_t)cpu.A + cpu.H; updateFlagsAdd(cpu.A, cpu.H, res); cpu.A = (uint8_t)res; break; }
+        case 0x85: { uint16_t res = (uint16_t)cpu.A + cpu.L; updateFlagsAdd(cpu.A, cpu.L, res); cpu.A = (uint8_t)res; break; }
+        case 0x86: { uint8_t val = readMemory(cpu.getHL()); uint16_t res = (uint16_t)cpu.A + val; updateFlagsAdd(cpu.A, val, res); cpu.A = (uint8_t)res; cycles = 7; break; }
+        case 0x87: { uint16_t res = (uint16_t)cpu.A + cpu.A; updateFlagsAdd(cpu.A, cpu.A, res); cpu.A = (uint8_t)res; break; }
+
+        case 0x88: { // ADC A, B
+            uint16_t res = (uint16_t)cpu.A + cpu.B + ((cpu.F & Z80A::C_BIT) ? 1 : 0);
+            updateFlagsAdc(cpu.A, cpu.B, res);
+            cpu.A = (uint8_t)res;
+            break;
+        }
+        case 0x89: { uint16_t res = (uint16_t)cpu.A + cpu.C + ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsAdc(cpu.A, cpu.C, res); cpu.A = (uint8_t)res; break; }
+        case 0x8A: { uint16_t res = (uint16_t)cpu.A + cpu.D + ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsAdc(cpu.A, cpu.D, res); cpu.A = (uint8_t)res; break; }
+        case 0x8B: { uint16_t res = (uint16_t)cpu.A + cpu.E + ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsAdc(cpu.A, cpu.E, res); cpu.A = (uint8_t)res; break; }
+        case 0x8C: { uint16_t res = (uint16_t)cpu.A + cpu.H + ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsAdc(cpu.A, cpu.H, res); cpu.A = (uint8_t)res; break; }
+        case 0x8D: { uint16_t res = (uint16_t)cpu.A + cpu.L + ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsAdc(cpu.A, cpu.L, res); cpu.A = (uint8_t)res; break; }
+        case 0x8E: { uint8_t val = readMemory(cpu.getHL()); uint16_t res = (uint16_t)cpu.A + val + ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsAdc(cpu.A, val, res); cpu.A = (uint8_t)res; cycles = 7; break; }
+        case 0x8F: { uint16_t res = (uint16_t)cpu.A + cpu.A + ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsAdc(cpu.A, cpu.A, res); cpu.A = (uint8_t)res; break; }
+        case 0xCE: { // ADC A, n
+            uint8_t n = readMemory(cpu.PC++);
+            uint16_t res = (uint16_t)cpu.A + n + ((cpu.F & Z80A::C_BIT) ? 1 : 0);
+            updateFlagsAdc(cpu.A, n, res);
+            cpu.A = (uint8_t)res;
+            cycles = 7;
+            break;
+        }
+
+        case 0xC6: { // ADD A, n
+            uint8_t n = readMemory(cpu.PC++);
+            uint16_t result = cpu.A + n;
+            updateFlagsAdd(cpu.A, n, result);
+            cpu.A = (uint8_t)result;
+            cycles = 7;
+            break;
+        }
+
+        case 0x90: { // SUB B
+            uint16_t res = (uint16_t)cpu.A - cpu.B;
+            updateFlagsSub(cpu.A, cpu.B, res);
+            cpu.A = (uint8_t)res;
+            break;
+        }
+        case 0x91: { uint16_t res = (uint16_t)cpu.A - cpu.C; updateFlagsSub(cpu.A, cpu.C, res); cpu.A = (uint8_t)res; break; }
+        case 0x92: { uint16_t res = (uint16_t)cpu.A - cpu.D; updateFlagsSub(cpu.A, cpu.D, res); cpu.A = (uint8_t)res; break; }
+        case 0x93: { uint16_t res = (uint16_t)cpu.A - cpu.E; updateFlagsSub(cpu.A, cpu.E, res); cpu.A = (uint8_t)res; break; }
+        case 0x94: { uint16_t res = (uint16_t)cpu.A - cpu.H; updateFlagsSub(cpu.A, cpu.H, res); cpu.A = (uint8_t)res; break; }
+        case 0x95: { uint16_t res = (uint16_t)cpu.A - cpu.L; updateFlagsSub(cpu.A, cpu.L, res); cpu.A = (uint8_t)res; break; }
+        case 0x96: { uint8_t val = readMemory(cpu.getHL()); uint16_t res = (uint16_t)cpu.A - val; updateFlagsSub(cpu.A, val, res); cpu.A = (uint8_t)res; cycles = 7; break; }
+        case 0x97: { uint16_t res = (uint16_t)cpu.A - cpu.A; updateFlagsSub(cpu.A, cpu.A, res); cpu.A = (uint8_t)res; break; }
+
+        case 0x98: { // SBC A, B
+            uint16_t res = (uint16_t)cpu.A - cpu.B - ((cpu.F & Z80A::C_BIT) ? 1 : 0);
+            updateFlagsSbc(cpu.A, cpu.B, res);
+            cpu.A = (uint8_t)res;
+            break;
+        }
+        case 0x99: { uint16_t res = (uint16_t)cpu.A - cpu.C - ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsSbc(cpu.A, cpu.C, res); cpu.A = (uint8_t)res; break; }
+        case 0x9A: { uint16_t res = (uint16_t)cpu.A - cpu.D - ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsSbc(cpu.A, cpu.D, res); cpu.A = (uint8_t)res; break; }
+        case 0x9B: { uint16_t res = (uint16_t)cpu.A - cpu.E - ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsSbc(cpu.A, cpu.E, res); cpu.A = (uint8_t)res; break; }
+        case 0x9C: { uint16_t res = (uint16_t)cpu.A - cpu.H - ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsSbc(cpu.A, cpu.H, res); cpu.A = (uint8_t)res; break; }
+        case 0x9D: { uint16_t res = (uint16_t)cpu.A - cpu.L - ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsSbc(cpu.A, cpu.L, res); cpu.A = (uint8_t)res; break; }
+        case 0x9E: { uint8_t val = readMemory(cpu.getHL()); uint16_t res = (uint16_t)cpu.A - val - ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsSbc(cpu.A, val, res); cpu.A = (uint8_t)res; cycles = 7; break; }
+        case 0x9F: { uint16_t res = (uint16_t)cpu.A - cpu.A - ((cpu.F & Z80A::C_BIT) ? 1 : 0); updateFlagsSbc(cpu.A, cpu.A, res); cpu.A = (uint8_t)res; break; }
+        case 0xDE: { // SBC A, n
+            uint8_t n = readMemory(cpu.PC++);
+            uint16_t res = (uint16_t)cpu.A - n - ((cpu.F & Z80A::C_BIT) ? 1 : 0);
+            updateFlagsSbc(cpu.A, n, res);
+            cpu.A = (uint8_t)res;
+            cycles = 7;
+            break;
+        }
+
+        case 0xD6: { // SUB n
+            uint8_t n = readMemory(cpu.PC++);
+            uint16_t result = cpu.A - n;
+            updateFlagsSub(cpu.A, n, result);
+            cpu.A = (uint8_t)result;
+            cycles = 7;
+            break;
+        }
+
+        // --- Logic Group ---
+        case 0xA0: { // AND B 
+           cpu.A &= cpu.B;
+           updateSZP(cpu.A);
+           cpu.F &= ~Z80A::C_BIT;
+           cpu.F |= Z80A::H_BIT;
+           cpu.F &= ~Z80A::N_BIT;
+           break;
+        }
+        case 0xA1: {  // AND C 
+          cpu.A &= cpu.C;
+          updateSZP(cpu.A);
+          cpu.F &= ~Z80A::C_BIT;
+          cpu.F |= Z80A::H_BIT;
+          cpu.F &= ~Z80A::N_BIT;
+          break;
+        }
+        case 0xA2: { cpu.A &= cpu.D; updateSZP(cpu.A); cpu.F &= ~Z80A::C_BIT; cpu.F |= Z80A::H_BIT; cpu.F &= ~Z80A::N_BIT; break; }
+        case 0xA3: { cpu.A &= cpu.E; updateSZP(cpu.A); cpu.F &= ~Z80A::C_BIT; cpu.F |= Z80A::H_BIT; cpu.F &= ~Z80A::N_BIT; break; }
+        case 0xA4: { cpu.A &= cpu.H; updateSZP(cpu.A); cpu.F &= ~Z80A::C_BIT; cpu.F |= Z80A::H_BIT; cpu.F &= ~Z80A::N_BIT; break; }
+        case 0xA5: { cpu.A &= cpu.L; updateSZP(cpu.A); cpu.F &= ~Z80A::C_BIT; cpu.F |= Z80A::H_BIT; cpu.F &= ~Z80A::N_BIT; break; }
+        case 0xA6: {  //AND (HL)
+          cpu.A &= readMemory(cpu.getHL());
+          updateSZP(cpu.A);
+          cpu.F &= ~Z80A::C_BIT;
+          cpu.F |= Z80A::H_BIT;
+          cpu.F &= ~Z80A::N_BIT;
+          cycles = 7;
+          break;
+        }
+        case 0xA7: { // AND A
+          cpu.A &= cpu.A;
+          updateSZP(cpu.A);
+          cpu.F &= ~Z80A::C_BIT;
+          cpu.F |= Z80A::H_BIT;
+          cpu.F &= ~Z80A::N_BIT;
+          break; 
+        }
+        case 0xAE: { // XOR (HL)
+          cpu.A ^= readMemory(cpu.getHL());
+          updateSZP(cpu.A);
+          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+          cycles = 7;
+          break;
+        }
+        case 0xB0: {  //OR B
+          cpu.A |= cpu.B;
+          updateSZP(cpu.A);
+          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+          break;
+        }
+        case 0xB1: {  // OR C 
+             cpu.A |= cpu.C;
+             updateSZP(cpu.A);
+             cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+             break;
+        }
+        case 0xB2: { cpu.A |= cpu.D; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
+        case 0xB3: { cpu.A |= cpu.E; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
+        case 0xB4: { cpu.A |= cpu.H; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
+        case 0xB5: { cpu.A |= cpu.L; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
+        case 0xB6: { cpu.A |= readMemory(cpu.getHL()); updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); cycles = 7; break; }
+        case 0xB7: { cpu.A |= cpu.A; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
+
+        case 0xB8: { updateFlagsSub(cpu.A, cpu.B, (uint16_t)cpu.A - cpu.B); break; }
+        case 0xB9: { updateFlagsSub(cpu.A, cpu.C, (uint16_t)cpu.A - cpu.C); break; }
+        case 0xBA: { updateFlagsSub(cpu.A, cpu.D, (uint16_t)cpu.A - cpu.D); break; }
+        case 0xBB: { updateFlagsSub(cpu.A, cpu.E, (uint16_t)cpu.A - cpu.E); break; }
+        case 0xBC: { updateFlagsSub(cpu.A, cpu.H, (uint16_t)cpu.A - cpu.H); break; }
+        case 0xBD: { updateFlagsSub(cpu.A, cpu.L, (uint16_t)cpu.A - cpu.L); break; }
+        case 0xBE: { uint8_t val = readMemory(cpu.getHL()); updateFlagsSub(cpu.A, val, (uint16_t)cpu.A - val); cycles = 7; break; }
+        case 0xBF: { updateFlagsSub(cpu.A, cpu.A, 0); break; }
+        case 0xE6: {  // AND n
+          uint8_t n = readMemory(cpu.PC++);
+          cpu.A &= n;
+          updateSZP(cpu.A);
+          cpu.F &= ~Z80A::C_BIT;
+          cpu.F |= Z80A::H_BIT;
+          cpu.F &= ~Z80A::N_BIT;
+          cycles = 7;
+          break;
+        } 
+ 
+        case 0xC9: { // RET
+            cpu.PC = read16(cpu.SP);
+            cpu.SP += 2;
+            cycles = 10;
+            break;
+        }
+
+        case 0xC0: { // RET NZ
+            if (!(cpu.F & Z80A::Z_BIT)) {
+                cpu.PC = read16(cpu.SP);
+                cpu.SP += 2;
+                cycles = 11;
+            } else {
+                cycles = 5;
+            }
+            break;
+        }
+
+        case 0xC8: { // RET Z
+            if (cpu.F & Z80A::Z_BIT) {
+                cpu.PC = read16(cpu.SP);
+                cpu.SP += 2;
+                cycles = 11;
+            } else {
+                cycles = 5;
+            }
+            break;
+        }
+
+        case 0xD0: { // RET NC
+            if (!(cpu.F & Z80A::C_BIT)) {
+                cpu.PC = read16(cpu.SP);
+                cpu.SP += 2;
+                cycles = 11;
+            } else {
+                cycles = 5;
+            }
+            break;
+        }
+
+        case 0xD8: { // RET C
+            if (cpu.F & Z80A::C_BIT) {
+                cpu.PC = read16(cpu.SP);
+                cpu.SP += 2;
+                cycles = 11;
+            } else {
+                cycles = 5;
+            }
+            break;
+        }
+
+        case 0xE0: { // RET PO
+            if (!(cpu.F & Z80A::P_BIT)) {
+                cpu.PC = read16(cpu.SP);
+                cpu.SP += 2;
+                cycles = 11;
+            } else {
+                cycles = 5;
+            }
+            break;
+        }
+
+        case 0xE8: { // RET PE
+            if (cpu.F & Z80A::P_BIT) {
+                cpu.PC = read16(cpu.SP);
+                cpu.SP += 2;
+                cycles = 11;
+            } else {
+                cycles = 5;
+            }
+            break;
+        }
+
+        case 0xF0: { // RET P
+            if (!(cpu.F & Z80A::S_BIT)) {
+                cpu.PC = read16(cpu.SP);
+                cpu.SP += 2;
+                cycles = 11;
+            } else {
+                cycles = 5;
+            }
+            break;
+        }
+
+        case 0xF8: { // RET M
+            if (cpu.F & Z80A::S_BIT) {
+                cpu.PC = read16(cpu.SP);
+                cpu.SP += 2;
+                cycles = 11;
+            } else {
+                cycles = 5;
+            }
+            break;
+        }
+
+        case 0xD3: { // OUT (n), A
+            uint8_t port = readMemory(cpu.PC++);
+            writeIO(port, cpu.A);
             cycles = 11;
             break;
         }
-        case 0xF9: { // LD SP, HL
-            cpu.SP = cpu.getHL();
-            cpu.PC++;
-            debug_log << "LD SP, HL (0x" << std::hex << cpu.SP << ")" << std::dec << std::endl;
-            cycles = 6;
+
+        case 0xDB: { // IN A, (n)
+            uint8_t port = readMemory(cpu.PC++);
+            cpu.A = readIO(port);
+            cycles = 11;
             break;
         }
-        default:
-            debug_log << "Unhandled stack opcode 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            cpu.PC++;
+
+        case 0xF3: { // DI
+            cpu.IFF1 = cpu.IFF2 = false;
             cycles = 4;
+            break;
+        }
+
+        case 0xFB: { // EI
+            cpu.IFF1 = cpu.IFF2 = true;
+            cycles = 4;
+            // Interrupts are enabled after the instruction FOLLOWING EI
+            break;
+        }
+
+        case 0xAF: {  // XOR A (Clears A)
+          cpu.A = 0;
+          updateSZP(cpu.A);
+          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+          break;
+        }
+        case 0xA8: { cpu.A ^= cpu.B; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
+        case 0xA9: { cpu.A ^= cpu.C; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
+        case 0xAA: { cpu.A ^= cpu.D; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
+        case 0xAB: { cpu.A ^= cpu.E; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
+        case 0xAC: { cpu.A ^= cpu.H; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
+        case 0xAD: {  // XOR L
+          cpu.A ^= cpu.L;
+          updateSZP(cpu.A);
+          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+          break;
+        }
+        case 0xEE: { // XOR n (Immediate)
+             uint8_t n = readMemory(cpu.PC++);
+             cpu.A ^= n;
+             updateSZP(cpu.A);
+             cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+             cycles = 7;
+             break;
+       }
+
+        case 0xB0: {  //OR B
+          cpu.A |= cpu.B;
+          updateSZP(cpu.A);
+          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+          break;
+        }
+        case 0xB1: {  // OR C 
+             cpu.A |= cpu.C;
+             updateSZP(cpu.A);
+             cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+             break;
+        }
+        case 0xB6: { cpu.A |= readMemory(cpu.getHL()); updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); cycles = 7; break; }
+        case 0xF6: {  // OR n
+          uint8_t n = readMemory(cpu.PC++);
+          cpu.A |= n;
+          updateSZP(cpu.A);
+          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+          cycles = 7;
+          break;
+        }
+
+        // --- Compare Group ---
+        case 0xB8: { updateFlagsSub(cpu.A, cpu.B, (uint16_t)cpu.A - cpu.B); break; }
+        case 0xB9: { updateFlagsSub(cpu.A, cpu.C, (uint16_t)cpu.A - cpu.C); break; }
+        case 0xBE: { uint8_t val = readMemory(cpu.getHL()); updateFlagsSub(cpu.A, val, (uint16_t)cpu.A - val); cycles = 7; break; }
+        case 0xBF: { updateFlagsSub(cpu.A, cpu.A, 0); break; }
+        case 0xFE: { // CP n 
+            uint8_t n = readMemory(cpu.PC++);
+            updateFlagsSub(cpu.A, n, (uint16_t)cpu.A - n);
+            cycles = 7;
+            break;
+        }
+
+        // --- Increment/Decrement Group ---
+        case 0x3C: { // INC A 
+            uint8_t before = cpu.A;
+            cpu.A++;
+            cpu.F &= Z80A::C_BIT; // Preserve carry 
+            if (cpu.A == 0) cpu.F |= Z80A::Z_BIT;
+            if (cpu.A & 0x80) cpu.F |= Z80A::S_BIT;
+            if ((before & 0x0F) == 0x0F) cpu.F |= Z80A::H_BIT;
+            if (before == 0x7F) cpu.F |= Z80A::P_BIT;  // Overflow 
+            break;
+        }           
+        case 0x04: { // INC B
+          uint8_t old = cpu.B;
+          cpu.B++;
+          uint8_t f = cpu.F & Z80A::C_BIT; // Preserve Carry
+          if (cpu.B == 0) f |= Z80A::Z_BIT;
+          if (cpu.B & 0x80) f |= Z80A::S_BIT;
+          if ((old & 0x0F) == 0x0F) f |= Z80A::H_BIT;
+          if (old == 0x7F) f |= Z80A::P_BIT; // Overflow
+          cpu.F = f;
+          break;
+        }
+        case 0x0C: { // INC C
+          uint8_t old = cpu.C;
+          cpu.C++;
+          uint8_t f = cpu.F & Z80A::C_BIT;
+          if (cpu.C == 0) f |= Z80A::Z_BIT;
+          if (cpu.C & 0x80) f |= Z80A::S_BIT;
+          if ((old & 0x0F) == 0x0F) f |= Z80A::H_BIT;
+          if (old == 0x7F) f |= Z80A::P_BIT;
+          cpu.F = f;
+          break;
+        }
+        case 0x14: { // INC D
+          uint8_t old = cpu.D; cpu.D++;
+          uint8_t f = cpu.F & Z80A::C_BIT;
+          if (cpu.D == 0) f |= Z80A::Z_BIT; if (cpu.D & 0x80) f |= Z80A::S_BIT;
+          if ((old & 0x0F) == 0x0F) f |= Z80A::H_BIT; if (old == 0x7F) f |= Z80A::P_BIT;
+          cpu.F = f; break;
+        }
+        case 0x1C: { // INC E
+          uint8_t old = cpu.E; cpu.E++;
+          uint8_t f = cpu.F & Z80A::C_BIT;
+          if (cpu.E == 0) f |= Z80A::Z_BIT; if (cpu.E & 0x80) f |= Z80A::S_BIT;
+          if ((old & 0x0F) == 0x0F) f |= Z80A::H_BIT; if (old == 0x7F) f |= Z80A::P_BIT;
+          cpu.F = f; break;
+        }
+        case 0x24: { // INC H
+          uint8_t old = cpu.H;
+          cpu.H++;
+          uint8_t f = cpu.F & Z80A::C_BIT;
+          if (cpu.H == 0) f |= Z80A::Z_BIT;
+          if (cpu.H & 0x80) f |= Z80A::S_BIT;
+          if ((old & 0x0F) == 0x0F) f |= Z80A::H_BIT;
+          if (old == 0x7F) f |= Z80A::P_BIT;
+          cpu.F = f;
+          break;
+        }
+        case 0x2C: { // INC L
+          uint8_t old = cpu.L;
+          cpu.L++;
+          uint8_t f = cpu.F & Z80A::C_BIT;
+          if (cpu.L == 0) f |= Z80A::Z_BIT;
+          if (cpu.L & 0x80) f |= Z80A::S_BIT;
+          if ((old & 0x0F) == 0x0F) f |= Z80A::H_BIT;
+          if (old == 0x7F) f |= Z80A::P_BIT;
+          cpu.F = f;
+          break;
+        }
+        case 0x34: { // INC (HL)
+          uint8_t old = readMemory(cpu.getHL());
+          uint8_t val = old + 1;
+          writeMemory(cpu.getHL(), val);
+          uint8_t f = cpu.F & Z80A::C_BIT;
+          if (val == 0) f |= Z80A::Z_BIT; if (val & 0x80) f |= Z80A::S_BIT;
+          if ((old & 0x0F) == 0x0F) f |= Z80A::H_BIT; if (old == 0x7F) f |= Z80A::P_BIT;
+          cpu.F = f; cycles = 11; break;
+        }
+
+        case 0x05: { // DEC B
+          uint8_t old = cpu.B;
+          cpu.B--;
+          uint8_t f = (cpu.F & Z80A::C_BIT) | Z80A::N_BIT;
+          if (cpu.B == 0) f |= Z80A::Z_BIT;
+          if (cpu.B & 0x80) f |= Z80A::S_BIT;
+          if ((old & 0x0F) == 0x00) f |= Z80A::H_BIT;
+          if (old == 0x80) f |= Z80A::P_BIT; // Overflow
+          cpu.F = f;
+          break;
+        }
+        case 0x0D: { // DEC C
+            uint8_t old = cpu.C;
+            cpu.C--;
+            uint8_t f = (cpu.F & Z80A::C_BIT) | Z80A::N_BIT;
+            if (cpu.C == 0) f |= Z80A::Z_BIT;
+            if (cpu.C & 0x80) f |= Z80A::S_BIT;
+            if ((old & 0x0F) == 0x00) f |= Z80A::H_BIT;
+            if (old == 0x80) f |= Z80A::P_BIT;
+            cpu.F = f;
+            break;
+        }
+        case 0x15: { // DEC D
+            uint8_t old = cpu.D; cpu.D--;
+            uint8_t f = (cpu.F & Z80A::C_BIT) | Z80A::N_BIT;
+            if (cpu.D == 0) f |= Z80A::Z_BIT; if (cpu.D & 0x80) f |= Z80A::S_BIT;
+            if ((old & 0x0F) == 0x00) f |= Z80A::H_BIT; if (old == 0x80) f |= Z80A::P_BIT;
+            cpu.F = f; break;
+        }
+        case 0x1D: { // DEC E
+            uint8_t old = cpu.E; cpu.E--;
+            uint8_t f = (cpu.F & Z80A::C_BIT) | Z80A::N_BIT;
+            if (cpu.E == 0) f |= Z80A::Z_BIT; if (cpu.E & 0x80) f |= Z80A::S_BIT;
+            if ((old & 0x0F) == 0x00) f |= Z80A::H_BIT; if (old == 0x80) f |= Z80A::P_BIT;
+            cpu.F = f; break;
+        }
+        case 0x25: { // DEC H
+            uint8_t old = cpu.H; cpu.H--;
+            uint8_t f = (cpu.F & Z80A::C_BIT) | Z80A::N_BIT;
+            if (cpu.H == 0) f |= Z80A::Z_BIT; if (cpu.H & 0x80) f |= Z80A::S_BIT;
+            if ((old & 0x0F) == 0x00) f |= Z80A::H_BIT; if (old == 0x80) f |= Z80A::P_BIT;
+            cpu.F = f; break;
+        }
+        case 0x2D: { // DEC L
+            uint8_t old = cpu.L; cpu.L--;
+            uint8_t f = (cpu.F & Z80A::C_BIT) | Z80A::N_BIT;
+            if (cpu.L == 0) f |= Z80A::Z_BIT; if (cpu.L & 0x80) f |= Z80A::S_BIT;
+            if ((old & 0x0F) == 0x00) f |= Z80A::H_BIT; if (old == 0x80) f |= Z80A::P_BIT;
+            cpu.F = f; break;
+        }
+        case 0x35: { // DEC (HL)
+            uint8_t old = readMemory(cpu.getHL());
+            uint8_t val = old - 1;
+            writeMemory(cpu.getHL(), val);
+            uint8_t f = (cpu.F & Z80A::C_BIT) | Z80A::N_BIT;
+            if (val == 0) f |= Z80A::Z_BIT; if (val & 0x80) f |= Z80A::S_BIT;
+            if ((old & 0x0F) == 0x00) f |= Z80A::H_BIT; if (old == 0x80) f |= Z80A::P_BIT;
+            cpu.F = f; cycles = 11; break;
+        }
+        case 0x3D: { // DEC A
+            uint8_t old = cpu.A; cpu.A--;
+            uint8_t f = (cpu.F & Z80A::C_BIT) | Z80A::N_BIT;
+            if (cpu.A == 0) f |= Z80A::Z_BIT; if (cpu.A & 0x80) f |= Z80A::S_BIT;
+            if ((old & 0x0F) == 0x00) f |= Z80A::H_BIT; if (old == 0x80) f |= Z80A::P_BIT;
+            cpu.F = f; break;
+        }
+
+        // --- 16-bit Arithmetic ---
+        case 0x09: { // ADD HL, BC
+          uint32_t hl = cpu.getHL();
+          uint32_t bc = cpu.getBC();
+          uint32_t res = hl + bc;
+          cpu.F &= ~(Z80A::N_BIT | Z80A::H_BIT | Z80A::C_BIT);
+          if (((hl & 0x0FFF) + (bc & 0x0FFF)) & 0x1000) cpu.F |= Z80A::H_BIT;
+          if (res & 0x10000) cpu.F |= Z80A::C_BIT;
+          cpu.setHL(res & 0xFFFF);
+          cycles = 11;
+          break;
+        }
+        case 0x19: { // ADD HL, DE
+          uint32_t hl = cpu.getHL();
+          uint32_t de = cpu.getDE();
+          uint32_t res = hl + de;
+          cpu.F &= ~(Z80A::N_BIT | Z80A::H_BIT | Z80A::C_BIT);
+          if (((hl & 0x0FFF) + (de & 0x0FFF)) & 0x1000) cpu.F |= Z80A::H_BIT;
+          if (res & 0x10000) cpu.F |= Z80A::C_BIT;
+          cpu.setHL(res & 0xFFFF);
+          cycles = 11;
+          break;
+        }
+        case 0x29: { // ADD HL, HL
+         uint32_t hl = cpu.getHL();
+         uint32_t res = hl + hl;
+         cpu.F &= ~(Z80A::N_BIT | Z80A::H_BIT | Z80A::C_BIT);
+         if (((hl & 0x0FFF) + (hl & 0x0FFF)) & 0x1000) cpu.F |= Z80A::H_BIT;
+         if (res & 0x10000) cpu.F |= Z80A::C_BIT;
+         cpu.setHL(res & 0xFFFF);
+         cycles = 11;
+         break;
+        }
+        case 0x39: { // ADD HL, SP
+         uint32_t hl = cpu.getHL();
+         uint32_t sp = cpu.SP;
+         uint32_t res = hl + sp;
+         cpu.F &= ~(Z80A::N_BIT | Z80A::H_BIT | Z80A::C_BIT);
+         if (((hl & 0x0FFF) + (sp & 0x0FFF)) & 0x1000) cpu.F |= Z80A::H_BIT;
+         if (res & 0x10000) cpu.F |= Z80A::C_BIT;
+         cpu.setHL(res & 0xFFFF);
+         cycles = 11;
+         break;
+       }
+       case 0x03: { cpu.setBC(cpu.getBC() + 1); cycles = 6; break; } // INC BC
+       case 0x13: { cpu.setDE(cpu.getDE() + 1); cycles = 6; break; } // INC DE
+       case 0x23: { cpu.setHL(cpu.getHL() + 1); cycles = 6; break; } // INC HL
+       case 0x33: { cpu.SP++; cycles = 6; break; }                   // INC SP
+       case 0x0B: { cpu.setBC(cpu.getBC() - 1); cycles = 6; break; } // DEC BC
+       case 0x1B: { cpu.setDE(cpu.getDE() - 1); cycles = 6; break; } // DEC DE
+       case 0x2B: { cpu.setHL(cpu.getHL() - 1); cycles = 6; break; } // DEC HL
+       case 0x3B: { cpu.SP--; cycles = 6; break; }                   // DEC SP
+
+        default:
+            debug_log << "Unimplemented Opcode: 0x" << std::hex << (int)opcode << std::endl;
+            break;
     }
-}
-
-int OpcodesHandler::handleBitInstructions(uint8_t opcode) {
-    int cycles = 8; // Base cycle count for most CB instructions (register-based)
-
-    // Decode the instruction type (BIT, SET, RES) and target bit/register
-    uint8_t operation = (opcode >> 6) & 0x03; // Top 2 bits: 00 = RLC/RRC/SLA/etc., 01 = BIT, 10 = RES, 11 = SET
-    uint8_t bit = (opcode >> 3) & 0x07;       // Middle 3 bits: bit position (0-7)
-    uint8_t reg = opcode & 0x07;              // Bottom 3 bits: register (0=B, 1=C, ..., 5=L, 6=(HL), 7=A)
-
-    // Helper to get the target register value (or (HL) from memory)
-    uint8_t* target = nullptr;
-    bool isMemory = false;
-    switch (reg) {
-        case 0: target = &cpu.B; break;
-        case 1: target = &cpu.C; break;
-        case 2: target = &cpu.D; break;
-        case 3: target = &cpu.E; break;
-        case 4: target = &cpu.H; break;
-        case 5: target = &cpu.L; break;
-        case 6: isMemory = true; break; // (HL)
-        case 7: target = &cpu.A; break;
-    }
-
-    uint16_t hl = (cpu.H << 8) | cpu.L;
-    uint8_t value = isMemory ? readMemory(hl) : *target;
-
-    switch (operation) {
-        case 0x01: { // BIT b, r
-            bool bitSet = (value >> bit) & 0x01;
-            cpu.F = (cpu.F & 0x01) | 0x20; // Preserve C flag, set H flag, clear N flag
-            if (!bitSet) cpu.F |= 0x40;    // Set Z flag if bit is 0
-            if (bit == 7 && bitSet) cpu.F |= 0x80; // Set S flag if bit 7 is 1
-            cpu.F |= 0x10; // Set P/V flag same as Z (parity not used in BIT)
-            debug_log << "BIT " << (int)bit << ", " << (isMemory ? "(HL)" : reg == 7 ? "A" : reg == 0 ? "B" : reg == 1 ? "C" : reg == 2 ? "D" : reg == 3 ? "E" : reg == 4 ? "H" : "L") << std::endl;
-            if (isMemory) cycles = 12; // Extra cycles for memory access
-            break;
-        }
-        case 0x02: { // RES b, r
-            value &= ~(1 << bit); // Clear the bit
-            if (isMemory) writeMemory(hl, value);
-            else *target = value;
-            debug_log << "RES " << (int)bit << ", " << (isMemory ? "(HL)" : reg == 7 ? "A" : reg == 0 ? "B" : reg == 1 ? "C" : reg == 2 ? "D" : reg == 3 ? "E" : reg == 4 ? "H" : "L") << std::endl;
-            if (isMemory) cycles = 15; // Extra cycles for memory access
-            break;
-        }
-        case 0x03: { // SET b, r
-            value |= (1 << bit); // Set the bit
-            if (isMemory) writeMemory(hl, value);
-            else *target = value;
-            debug_log << "SET " << (int)bit << ", " << (isMemory ? "(HL)" : reg == 7 ? "A" : reg == 0 ? "B" : reg == 1 ? "C" : reg == 2 ? "D" : reg == 3 ? "E" : reg == 4 ? "H" : "L") << std::endl;
-            if (isMemory) cycles = 15; // Extra cycles for memory access
-            break;
-        }
-        default: { // Handle other CB instructions (e.g., shifts like RLC, RRC, SLA)
-            debug_log << "Unhandled CB instruction: 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            break;
-        }
-    }
-
-    return cycles;
 }
 
 uint8_t OpcodesHandler::readMemory(uint16_t addr) {
-    debug_log << "Reading memory at 0x" << std::hex << addr << std::dec << std::endl;
     return cpu.memoryReadCallback(addr);
 }
 
