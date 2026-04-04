@@ -1,0 +1,57 @@
+#include "ppi.h"
+#include "keyboard/keyboard.h"
+
+PPI& PPI::getInstance() {
+    static PPI instance;
+    return instance;
+}
+
+PPI::PPI() : portA(0), portB(0xFF), portC(0), control(0) {
+    reset();
+}
+
+void PPI::reset() {
+    portA = 0x00; // Primary slot 0 for all pages
+    portB = 0xFF; // No keys pressed
+    portC = 0x00;
+}
+
+uint8_t PPI::read(uint8_t port) {
+    switch (port & 0x03) {
+        case 0: return portA;
+        case 1: {
+            // Port B is Keyboard data (Input)
+            // It should return the matrix state for the row selected in Port C
+            uint8_t row = portC & 0x0F;
+            return Keyboard::getInstance().readRow(row);
+        }
+        case 2: return portC;
+        case 3: return control;
+    }
+    return 0xFF;
+}
+
+void PPI::write(uint8_t port, uint8_t value) {
+    switch (port & 0x03) {
+        case 0: // Port A: Primary Slot Select (AAAA BBBB CCCC DDDD)
+            portA = value;
+            if (slot_select_callback) slot_select_callback(value);
+            break;
+        case 1: // Port B is usually input on MSX
+            portB = value;
+            break;
+        case 2: // Port C: Row Select (bits 0-3)
+            portC = value;
+            if (row_select_callback) row_select_callback(value & 0x0F);
+            break;
+        case 3: // Control register
+            control = value;
+            // Handle bit set/reset if bit 7 is 0
+            if (!(value & 0x80)) {
+                uint8_t bit = (value >> 1) & 0x07;
+                if (value & 0x01) portC |= (1 << bit);
+                else portC &= ~(1 << bit);
+            }
+            break;
+    }
+}
