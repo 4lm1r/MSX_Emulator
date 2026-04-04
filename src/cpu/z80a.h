@@ -63,6 +63,7 @@ public:
     bool IFF2 = false; 
     bool interruptPending = false; 
     uint64_t total_cycles = 0;
+    bool EI_pending = false;  // EI was executed, enable interrupts after next instruction
 
     // Callbacks
     std::function<uint8_t(uint16_t)> memoryReadCallback;

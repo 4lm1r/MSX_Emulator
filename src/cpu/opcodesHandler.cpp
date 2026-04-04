@@ -301,7 +301,7 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
     cycles = 4; // Default
 
     switch (opcode) {
-        case 0x00: break; // NOP
+        case 0x00: cycles = 4; break; // NOP
         
         case 0xCB: { // Prefix CB
             uint8_t cb_opcode = readMemory(cpu.PC++);
@@ -858,7 +858,7 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
         case 0x73: { writeMemory(cpu.getHL(), cpu.E); cycles = 7; break; }
         case 0x74: { writeMemory(cpu.getHL(), cpu.H); cycles = 7; break; }
         case 0x75: { writeMemory(cpu.getHL(), cpu.L); cycles = 7; break; }
-        case 0x76: { cpu.halted = true; break; } // HALT
+        case 0x76: { cpu.halted = true; cycles = 4; break; } // HALT
         case 0x77: { writeMemory(cpu.getHL(), cpu.A); cycles = 7; break; }
         // A Row
         case 0x78: { cpu.A = cpu.B; break; }
