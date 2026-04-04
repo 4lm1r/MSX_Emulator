@@ -652,6 +652,7 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
         case 0x31: { // LD SP, nn 
           cpu.SP = read16(cpu.PC);
           cpu.PC += 2;
+          std::cout << "LD SP, 0x" << std::hex << cpu.SP << std::dec << std::endl;
           cycles = 10;
           break;
         }
@@ -672,6 +673,7 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
 
         case 0xC5: {  // PUSH BC 
           cpu.SP -= 2;
+          std::cout << "PUSH BC: SP=0x" << std::hex << cpu.SP << " value=0x" << cpu.getBC() << std::dec << std::endl;
           writeMemory(cpu.SP, cpu.C);
           writeMemory(cpu.SP + 1, cpu.B);
           cycles = 11;
@@ -731,6 +733,7 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
 
         case 0xF5: { // PUSH AF
            cpu.SP -= 2;
+           std::cout << "PUSH AF: SP=0x" << std::hex << cpu.SP << " value=0x" << cpu.getAF() << std::dec << std::endl;
            writeMemory(cpu.SP, cpu.F);      // Low Byte is Flags
            writeMemory(cpu.SP + 1, cpu.A);  // High Byte is Accumulator
            cycles = 11;

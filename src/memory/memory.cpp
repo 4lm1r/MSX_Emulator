@@ -138,7 +138,20 @@ void Memory::write(uint16_t addr, uint8_t value) {
                   << " val=0x" << std::setw(2) << (int)value << std::dec << std::endl;
         write_count++;
     }
-    if (page_map[page]) page_map[page]->write(addr, value);
+    if (page_map[page]) {
+        // Check if this is a ROM slot (read-only)
+        auto rom = std::dynamic_pointer_cast<RomSlot>(page_map[page]);
+        if (rom) {
+            // ROM is read-only, ignore write
+            static int rom_write_attempts = 0;
+            if (rom_write_attempts < 5) {
+                std::cout << "MEM write: Attempt to write to ROM at 0x" << std::hex << addr << " ignored" << std::dec << std::endl;
+                rom_write_attempts++;
+            }
+            return;
+        }
+        page_map[page]->write(addr, value);
+    }
 }
 
 void Memory::setSlot(int slot_num, std::shared_ptr<Slot> slot) {
@@ -152,8 +165,9 @@ void Memory::mapPrimarySlots(uint8_t ppi_val) {
     current_ppi_val = ppi_val;
     // ppi_val = [D7 D6] [D5 D4] [D3 D2] [D1 D0]
     //            Page 3  Page 2  Page 1  Page 0
+    // Always log the first 10 mappings
     static int map_count = 0;
-    if (map_count < 5) {
+    if (map_count < 10) {
         std::cout << "Memory::mapPrimarySlots: ppi_val=0x" << std::hex << (int)ppi_val << std::dec << std::endl;
         for (int page = 0; page < 4; ++page) {
             int slot_index = (ppi_val >> (page * 2)) & 0x03;
