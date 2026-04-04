@@ -3,6 +3,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <iomanip>
+#include <iostream>
 #include "debug.h"
 
 OpcodesHandler::OpcodesHandler(Z80A& cpu) : cpu(cpu), cycles(0) {
@@ -652,7 +653,7 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
         case 0x31: { // LD SP, nn 
           cpu.SP = read16(cpu.PC);
           cpu.PC += 2;
-          std::cout << "LD SP, 0x" << std::hex << cpu.SP << std::dec << std::endl;
+          std::cout << "LD SP, 0x" << std::hex << cpu.SP << " (page=" << (cpu.SP >> 14) << ")" << std::dec << std::endl;
           cycles = 10;
           break;
         }
@@ -676,6 +677,14 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
           std::cout << "PUSH BC: SP=0x" << std::hex << cpu.SP << " value=0x" << cpu.getBC() << std::dec << std::endl;
           writeMemory(cpu.SP, cpu.C);
           writeMemory(cpu.SP + 1, cpu.B);
+          // Verify the write
+          uint8_t low = readMemory(cpu.SP);
+          uint8_t high = readMemory(cpu.SP + 1);
+          if (low != cpu.C || high != cpu.B) {
+              std::cout << "PUSH BC: WARNING: write mismatch at SP=0x" << std::hex << cpu.SP 
+                        << " wrote C=0x" << (int)cpu.C << " read=0x" << (int)low
+                        << " wrote B=0x" << (int)cpu.B << " read=0x" << (int)high << std::dec << std::endl;
+          }
           cycles = 11;
           break;
         }
@@ -736,6 +745,14 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
            std::cout << "PUSH AF: SP=0x" << std::hex << cpu.SP << " value=0x" << cpu.getAF() << std::dec << std::endl;
            writeMemory(cpu.SP, cpu.F);      // Low Byte is Flags
            writeMemory(cpu.SP + 1, cpu.A);  // High Byte is Accumulator
+           // Verify the write
+           uint8_t low = readMemory(cpu.SP);
+           uint8_t high = readMemory(cpu.SP + 1);
+           if (low != cpu.F || high != cpu.A) {
+               std::cout << "PUSH AF: WARNING: write mismatch at SP=0x" << std::hex << cpu.SP 
+                         << " wrote F=0x" << (int)cpu.F << " read=0x" << (int)low
+                         << " wrote A=0x" << (int)cpu.A << " read=0x" << (int)high << std::dec << std::endl;
+           }
            cycles = 11;
            break;
         }

@@ -132,7 +132,7 @@ void Memory::write(uint16_t addr, uint8_t value) {
     int page = (addr >> 14) & 0x03;
     // Log first few writes to RAM areas
     static int write_count = 0;
-    if (write_count < 10) {
+    if (write_count < 20) {
         std::cout << "MEM write: addr=0x" << std::hex << std::setw(4) << std::setfill('0') << addr 
                   << " page=" << page << " slot=" << ((current_ppi_val >> (page*2)) & 0x03)
                   << " val=0x" << std::setw(2) << (int)value << std::dec << std::endl;
@@ -144,13 +144,22 @@ void Memory::write(uint16_t addr, uint8_t value) {
         if (rom) {
             // ROM is read-only, ignore write
             static int rom_write_attempts = 0;
-            if (rom_write_attempts < 5) {
+            if (rom_write_attempts < 10) {
                 std::cout << "MEM write: Attempt to write to ROM at 0x" << std::hex << addr << " ignored" << std::dec << std::endl;
                 rom_write_attempts++;
             }
             return;
         }
+        // Write to RAM
         page_map[page]->write(addr, value);
+        // Verify write
+        uint8_t read_back = page_map[page]->read(addr);
+        if (read_back != value && write_count < 10) {
+            std::cout << "MEM write: WARNING: write/read mismatch at 0x" << std::hex << addr 
+                      << " wrote=0x" << (int)value << " read=0x" << (int)read_back << std::dec << std::endl;
+        }
+    } else {
+        std::cout << "MEM write: ERROR: no slot mapped for page " << page << " at addr 0x" << std::hex << addr << std::dec << std::endl;
     }
 }
 
@@ -165,9 +174,9 @@ void Memory::mapPrimarySlots(uint8_t ppi_val) {
     current_ppi_val = ppi_val;
     // ppi_val = [D7 D6] [D5 D4] [D3 D2] [D1 D0]
     //            Page 3  Page 2  Page 1  Page 0
-    // Always log the first 10 mappings
+    // Always log mappings
     static int map_count = 0;
-    if (map_count < 10) {
+    if (map_count < 20) {
         std::cout << "Memory::mapPrimarySlots: ppi_val=0x" << std::hex << (int)ppi_val << std::dec << std::endl;
         for (int page = 0; page < 4; ++page) {
             int slot_index = (ppi_val >> (page * 2)) & 0x03;
