@@ -91,19 +91,29 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    // Log first 16 bytes of ROM to verify
-    std::cout << "First 16 bytes of ROM at 0x0000: ";
-    for (int i = 0; i < 16; i++) {
+    // Log first 32 bytes of ROM to verify
+    std::cout << "First 32 bytes of ROM at 0x0000: ";
+    for (int i = 0; i < 32; i++) {
         std::cout << std::hex << std::setw(2) << std::setfill('0') 
                   << (int)memory.read(i) << " ";
+        if ((i+1) % 16 == 0) std::cout << std::endl << "                      ";
     }
     std::cout << std::dec << std::endl;
     
-    // Ensure PC starts at 0x0000
+    // Also show what the first few instructions are
+    std::cout << "First instruction at 0x0000: 0x" << std::hex << (int)memory.read(0) 
+              << " (DI if 0xF3)" << std::dec << std::endl;
+    std::cout << "Second instruction at 0x0001: 0x" << std::hex << (int)memory.read(1) 
+              << " (JP if 0xC3)" << std::dec << std::endl;
+    if (memory.read(1) == 0xC3) {
+        uint16_t jp_addr = memory.read(2) | (memory.read(3) << 8);
+        std::cout << "JP destination: 0x" << std::hex << jp_addr << std::dec << std::endl;
+    }
+    
+    // Ensure PC starts at 0x0000 and SP is forced to RAM area
     cpu.PC = 0x0000;
-    std::cout << "CPU PC set to 0x" << std::hex << cpu.PC << std::dec << std::endl;
-
-    cpu.PC = 0x0000;
+    cpu.SP = 0xF380;
+    std::cout << "CPU PC set to 0x" << std::hex << cpu.PC << " SP forced to 0x" << cpu.SP << std::dec << std::endl;
     bool running = true;
     SDL_Event event;
     uint8_t screen_buffer[256 * 192 * 4];

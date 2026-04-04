@@ -46,9 +46,9 @@ int Z80A::execute() {
     
     uint8_t opcode = memoryReadCallback(PC);
     
-    // Always trace first 30 instructions
+    // Always trace first 50 instructions
     static int instruction_count = 0;
-    if (instruction_count < 30) {
+    if (instruction_count < 50) {
         std::cout << "CPU TRACE PC=0x" << std::hex << std::setw(4) << std::setfill('0') << PC 
                   << " op=0x" << std::setw(2) << std::setfill('0') << (int)opcode;
         // Show next two bytes for context
@@ -61,6 +61,8 @@ int Z80A::execute() {
                   << " DE=0x" << std::setw(4) << getDE()
                   << " HL=0x" << std::setw(4) << getHL()
                   << " SP=0x" << std::setw(4) << SP;
+        // Show page of SP
+        std::cout << " SP_page=" << (SP >> 14);
         std::cout << std::dec << std::endl;
         instruction_count++;
     }

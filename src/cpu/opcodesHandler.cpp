@@ -672,11 +672,12 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
           uint16_t addr = read16(cpu.PC);
           cpu.SP = addr;
           cpu.PC += 2;
-          std::cout << "LD SP, nn: SP set to 0x" << std::hex << cpu.SP 
-                    << " (read from PC=0x" << (cpu.PC-2) << ")" << std::dec << std::endl;
+          std::cout << ">>>> LD SP, nn: SP set to 0x" << std::hex << cpu.SP 
+                    << " (read from PC=0x" << (cpu.PC-2) << ")" 
+                    << " SP_page=" << (cpu.SP >> 14) << std::dec << std::endl;
           // Log if SP is in ROM area
           if (cpu.SP < 0x8000) {
-              std::cout << "WARNING: SP in ROM area! (0x" << std::hex << cpu.SP << ")" << std::dec << std::endl;
+              std::cout << "CRITICAL WARNING: SP in ROM area! (0x" << std::hex << cpu.SP << ")" << std::dec << std::endl;
           }
           cycles = 10;
           break;
@@ -698,8 +699,8 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
 
         case 0xC5: {  // PUSH BC 
           cpu.SP -= 2;
-          std::cout << "PUSH BC: SP=0x" << std::hex << cpu.SP 
-                    << " value=0x" << cpu.getBC() << std::dec << std::endl;
+          std::cout << "PUSH BC: SP changed from 0x" << std::hex << (cpu.SP + 2) 
+                    << " to 0x" << cpu.SP << " value=0x" << cpu.getBC() << std::dec << std::endl;
           writeMemory(cpu.SP, cpu.C);      // Low byte
           writeMemory(cpu.SP + 1, cpu.B);  // High byte
           // Verify the write only if in RAM area (0x8000-0xFFFF)
@@ -713,6 +714,8 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
               } else {
                   std::cout << "PUSH BC: Successfully wrote to RAM" << std::endl;
               }
+          } else {
+              std::cout << "PUSH BC: WARNING: SP in ROM area! Write will be ignored." << std::endl;
           }
           cycles = 11;
           break;
