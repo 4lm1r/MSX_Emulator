@@ -85,10 +85,10 @@ Memory::Memory() : current_ppi_val(0) {
 
 void Memory::reset() {
     std::cout << "Memory::reset: Initializing slots..." << std::endl;
-    // Default setup: Slot 0 = ROM, Slot 1 = RAM, Slots 2,3 = Empty
+    // Default setup: Slot 0 = ROM, Slot 1 = RAM, Slots 2,3 = RAM
     primary_slots[0] = std::make_shared<RomSlot>(64 * 1024);
     primary_slots[1] = std::make_shared<RamSlot>(64 * 1024);
-    primary_slots[2] = std::make_shared<RamSlot>(64 * 1024); // More RAM for now
+    primary_slots[2] = std::make_shared<RamSlot>(64 * 1024);
     primary_slots[3] = std::make_shared<RamSlot>(64 * 1024);
     
     std::cout << "  Slot 0: ROM (64KB)" << std::endl;
@@ -96,7 +96,9 @@ void Memory::reset() {
     std::cout << "  Slot 2: RAM (64KB)" << std::endl;
     std::cout << "  Slot 3: RAM (64KB)" << std::endl;
     
-    mapPrimarySlots(0xC0); // Page 0,1,2 = Slot 0, Page 3 = Slot 3 (RAM)
+    // MSX1 default: Page 0,1 = ROM (Slot 0), Page 2,3 = RAM (Slot 3)
+    // This puts RAM at 0x8000-0xFFFF which is where the stack should be
+    mapPrimarySlots(0x30); // 0x30 = 0011 0000: Page 0=0, Page 1=0, Page 2=3, Page 3=3
 }
 
 uint8_t Memory::read(uint16_t addr) const {
@@ -130,9 +132,9 @@ uint8_t Memory::read(uint16_t addr) const {
 
 void Memory::write(uint16_t addr, uint8_t value) {
     int page = (addr >> 14) & 0x03;
-    // Log first few writes to RAM areas
+    // Log only first few writes and writes to ROM
     static int write_count = 0;
-    if (write_count < 20) {
+    if (write_count < 10) {
         std::cout << "MEM write: addr=0x" << std::hex << std::setw(4) << std::setfill('0') << addr 
                   << " page=" << page << " slot=" << ((current_ppi_val >> (page*2)) & 0x03)
                   << " val=0x" << std::setw(2) << (int)value << std::dec << std::endl;
@@ -144,7 +146,7 @@ void Memory::write(uint16_t addr, uint8_t value) {
         if (rom) {
             // ROM is read-only, ignore write
             static int rom_write_attempts = 0;
-            if (rom_write_attempts < 10) {
+            if (rom_write_attempts < 5) {
                 std::cout << "MEM write: Attempt to write to ROM at 0x" << std::hex << addr << " ignored" << std::dec << std::endl;
                 rom_write_attempts++;
             }
@@ -152,14 +154,20 @@ void Memory::write(uint16_t addr, uint8_t value) {
         }
         // Write to RAM
         page_map[page]->write(addr, value);
-        // Verify write
-        uint8_t read_back = page_map[page]->read(addr);
-        if (read_back != value && write_count < 10) {
-            std::cout << "MEM write: WARNING: write/read mismatch at 0x" << std::hex << addr 
-                      << " wrote=0x" << (int)value << " read=0x" << (int)read_back << std::dec << std::endl;
+        // Verify write only for first few mismatches
+        static int mismatch_count = 0;
+        if (mismatch_count < 5) {
+            uint8_t read_back = page_map[page]->read(addr);
+            if (read_back != value) {
+                std::cout << "MEM write: WARNING: write/read mismatch at 0x" << std::hex << addr 
+                          << " wrote=0x" << (int)value << " read=0x" << (int)read_back << std::dec << std::endl;
+                mismatch_count++;
+            }
         }
     } else {
-        std::cout << "MEM write: ERROR: no slot mapped for page " << page << " at addr 0x" << std::hex << addr << std::dec << std::endl;
+        if (write_count < 5) {
+            std::cout << "MEM write: ERROR: no slot mapped for page " << page << " at addr 0x" << std::hex << addr << std::dec << std::endl;
+        }
     }
 }
 
