@@ -13,7 +13,7 @@ PPI::PPI() : portA(0), portB(0xFF), portC(0), control(0) {
 }
 
 void PPI::reset() {
-    portA = 0xC0; // Primary slot: Page 0=0, Page 1=0, Page 2=0, Page 3=3 (matches memory reset)
+    portA = 0xF0; // Primary slot: Page 0=0, Page 1=0, Page 2=3, Page 3=3 (RAM in pages 2 and 3)
     portB = 0xFF; // No keys pressed
     portC = 0x00;
     // Notify memory about initial slot mapping

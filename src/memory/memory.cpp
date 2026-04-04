@@ -64,13 +64,25 @@ void RomSlot::setData(const std::vector<uint8_t>& data, uint16_t offset) {
 }
 
 // --- RamSlot ---
-RamSlot::RamSlot(size_t size) { buffer.resize(size, 0); }
+RamSlot::RamSlot(size_t size) { 
+    buffer.resize(size, 0); 
+    std::cout << "RamSlot created with size " << size << " bytes" << std::endl;
+}
 uint8_t RamSlot::read(uint16_t addr) const {
     if (addr < buffer.size()) return buffer[addr];
     return 0xFF;
 }
 void RamSlot::write(uint16_t addr, uint8_t value) {
-    if (addr < buffer.size()) buffer[addr] = value;
+    if (addr < buffer.size()) {
+        buffer[addr] = value;
+        // Log first few writes to verify
+        static int write_log_count = 0;
+        if (write_log_count < 10 && addr >= 0x8000) {
+            std::cout << "RamSlot::write: addr=0x" << std::hex << addr 
+                      << " value=0x" << (int)value << std::dec << std::endl;
+            write_log_count++;
+        }
+    }
 }
 
 // --- Memory ---
@@ -96,13 +108,11 @@ void Memory::reset() {
     std::cout << "  Slot 2: RAM (64KB)" << std::endl;
     std::cout << "  Slot 3: RAM (64KB)" << std::endl;
     
-    // MSX1 default: Page 0,1 = ROM (Slot 0), Page 2,3 = RAM (Slot 3)
-    // But to ensure RAM is accessible for stack, let's map Slot 3 to page 3 initially
-    // 0xFF = 1111 1111: Page 0=3, Page 1=3, Page 2=3, Page 3=3 (all RAM)
-    // However, BIOS needs ROM at page 0, so we need a mix.
-    // Let's use 0xC0 = 1100 0000: Page 0=0 (ROM), Page 1=0 (ROM), Page 2=0 (ROM), Page 3=3 (RAM)
-    // But SP=0xF380 is in page 3, which is RAM. Good.
-    mapPrimarySlots(0xC0); // 0xC0 = 1100 0000: Page 0=0, Page 1=0, Page 2=0, Page 3=3
+    // Map according to MSX1 standard with RAM in pages 2 and 3
+    // 0xF0 = 1111 0000: Page 0=0 (ROM), Page 1=0 (ROM), Page 2=3 (RAM), Page 3=3 (RAM)
+    // This puts RAM at 0x8000-0xFFFF where the stack should be
+    mapPrimarySlots(0xF0);
+    std::cout << "Memory::reset: Mapped slots with ppi_val=0xF0" << std::endl;
 }
 
 uint8_t Memory::read(uint16_t addr) const {
@@ -136,7 +146,21 @@ uint8_t Memory::read(uint16_t addr) const {
 
 void Memory::write(uint16_t addr, uint8_t value) {
     int page = (addr >> 14) & 0x03;
-    // Log only first few writes and writes to ROM
+    // Always log writes to RAM area (0x8000-0xFFFF)
+    static bool log_ram_writes = true;
+    if (addr >= 0x8000 && log_ram_writes) {
+        std::cout << "RAM WRITE: addr=0x" << std::hex << std::setw(4) << std::setfill('0') << addr 
+                  << " page=" << page << " slot=" << ((current_ppi_val >> (page*2)) & 0x03)
+                  << " val=0x" << std::setw(2) << (int)value << std::dec << std::endl;
+        // Stop logging after 20 writes to avoid flooding
+        static int ram_write_count = 0;
+        if (++ram_write_count >= 20) {
+            log_ram_writes = false;
+            std::cout << "RAM WRITE: Stopping logs to avoid flooding" << std::dec << std::endl;
+        }
+    }
+    
+    // Log first few writes regardless of address
     static int write_count = 0;
     if (write_count < 10) {
         std::cout << "MEM write: addr=0x" << std::hex << std::setw(4) << std::setfill('0') << addr 
@@ -144,13 +168,14 @@ void Memory::write(uint16_t addr, uint8_t value) {
                   << " val=0x" << std::setw(2) << (int)value << std::dec << std::endl;
         write_count++;
     }
+    
     if (page_map[page]) {
         // Check if this is a ROM slot (read-only)
         auto rom = std::dynamic_pointer_cast<RomSlot>(page_map[page]);
         if (rom) {
             // ROM is read-only, ignore write
             static int rom_write_attempts = 0;
-            if (rom_write_attempts < 5) {
+            if (rom_write_attempts < 10) {
                 std::cout << "MEM write: Attempt to write to ROM at 0x" << std::hex << addr << " ignored" << std::dec << std::endl;
                 rom_write_attempts++;
             }
@@ -158,35 +183,28 @@ void Memory::write(uint16_t addr, uint8_t value) {
         }
         // Write to RAM
         page_map[page]->write(addr, value);
-        // Verify write only for first few mismatches
-        static int mismatch_count = 0;
-        if (mismatch_count < 5) {
+        // Verify write for first few RAM writes
+        static int verify_count = 0;
+        if (verify_count < 10 && addr >= 0x8000) {
             uint8_t read_back = page_map[page]->read(addr);
             if (read_back != value) {
-                std::cout << "MEM write: WARNING: write/read mismatch at 0x" << std::hex << addr 
+                std::cout << "MEM write: CRITICAL: write/read mismatch at 0x" << std::hex << addr 
                           << " wrote=0x" << (int)value << " read=0x" << (int)read_back 
                           << " page=" << page << " slot=" << ((current_ppi_val >> (page*2)) & 0x03)
                           << std::dec << std::endl;
-                mismatch_count++;
             } else {
-                // Log successful write for first few writes to RAM
-                static int success_log = 0;
-                if (success_log < 5) {
-                    std::cout << "MEM write: SUCCESS: wrote 0x" << std::hex << (int)value 
-                              << " to addr 0x" << addr << " (RAM)" << std::dec << std::endl;
-                    success_log++;
-                }
+                std::cout << "MEM write: Verified RAM write at 0x" << std::hex << addr 
+                          << " value=0x" << (int)value << std::dec << std::endl;
             }
+            verify_count++;
         }
     } else {
-        // This should not happen, but if it does, try to write to Slot 3 RAM directly
-        // as a fallback for safety
-        if (write_count < 5) {
-            std::cout << "MEM write: WARNING: no slot mapped for page " << page 
-                      << ", falling back to Slot 3 RAM at addr 0x" << std::hex << addr << std::dec << std::endl;
-        }
-        // Write to Slot 3 RAM directly
-        if (primary_slots[3]) {
+        // No slot mapped for this page - this should not happen with proper PPI setup
+        std::cout << "MEM write: ERROR: no slot mapped for page " << page 
+                  << " at addr 0x" << std::hex << addr << std::dec << std::endl;
+        // Fallback: write to Slot 3 RAM if address is in RAM area
+        if (addr >= 0x8000 && primary_slots[3]) {
+            std::cout << "MEM write: Falling back to Slot 3 RAM for addr 0x" << std::hex << addr << std::dec << std::endl;
             primary_slots[3]->write(addr, value);
         }
     }

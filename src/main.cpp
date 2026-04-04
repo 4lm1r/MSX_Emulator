@@ -28,6 +28,11 @@ int main(int argc, char* argv[]) {
     vdp.setCPU(&cpu);
     vdp.setDebugLogStream(debug_log);
 
+    // Force PPI Port A to 0xF0 to map RAM in pages 2 and 3 (0x8000-0xFFFF)
+    // 0xF0 = 1111 0000: Page 0=0 (ROM), Page 1=0 (ROM), Page 2=3 (RAM), Page 3=3 (RAM)
+    ppi.write(0, 0xF0);
+    std::cout << "Forced PPI Port A to 0xF0 for RAM mapping" << std::endl;
+
     // Set CPU callbacks to use Memory class
     cpu.setMemoryReadCallback([&](uint16_t addr) { return memory.read(addr); });
     cpu.setMemoryWriteCallback([&](uint16_t addr, uint8_t val) { memory.write(addr, val); });
