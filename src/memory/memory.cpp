@@ -1,6 +1,7 @@
 #include "memory.h"
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 
 // --- RomSlot ---
 RomSlot::RomSlot(size_t size) { buffer.resize(size, 0); }
@@ -11,8 +12,34 @@ uint8_t RomSlot::read(uint16_t addr) const {
 void RomSlot::write(uint16_t addr, uint8_t value) { /* ROM is read-only */ }
 bool RomSlot::load(const std::string& filename, uint16_t offset) {
     std::ifstream file(filename, std::ios::binary);
-    if (!file.is_open()) return false;
-    file.read(reinterpret_cast<char*>(&buffer[offset]), buffer.size() - offset);
+    if (!file.is_open()) {
+        std::cout << "RomSlot::load: Failed to open file: " << filename << std::endl;
+        return false;
+    }
+    
+    // Get file size
+    file.seekg(0, std::ios::end);
+    size_t file_size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    
+    std::cout << "RomSlot::load: File '" << filename << "' size: " << file_size << " bytes" << std::endl;
+    
+    // Ensure we don't read beyond buffer
+    size_t max_read = buffer.size() - offset;
+    if (file_size > max_read) {
+        std::cout << "RomSlot::load: Warning: file too large, truncating to " << max_read << " bytes" << std::endl;
+        file_size = max_read;
+    }
+    
+    file.read(reinterpret_cast<char*>(&buffer[offset]), file_size);
+    
+    // Log first 16 bytes
+    std::cout << "RomSlot::load: First 16 bytes at offset 0x" << std::hex << offset << ": ";
+    for (int i = 0; i < 16 && i < file_size; i++) {
+        std::cout << std::setw(2) << std::setfill('0') << (int)buffer[offset + i] << " ";
+    }
+    std::cout << std::dec << std::endl;
+    
     return true;
 }
 void RomSlot::setData(const std::vector<uint8_t>& data, uint16_t offset) {

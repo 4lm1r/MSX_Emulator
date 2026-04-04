@@ -1,6 +1,7 @@
 #include "z80a.h"
 #include "opcodesHandler.h"
 #include "debug.h"
+#include <iomanip>
 
 Z80A::Z80A() : A(0), B(0), C(0), D(0), E(0), H(0), L(0), F(0), PC(0), SP(0xF380),
                A_(0), F_(0), B_(0), C_(0), D_(0), E_(0), H_(0), L_(0),

@@ -8,6 +8,7 @@
 #include "ppi/ppi.h"
 #include "keyboard/keyboard.h"
 #include <fstream>
+#include <iomanip>
 #include "debug.h"
 
 int main(int argc, char* argv[]) {
