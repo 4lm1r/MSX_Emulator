@@ -641,21 +641,29 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
         case 0xCD: {  // CALL nn 
           uint16_t dest = read16(cpu.PC);
           cpu.PC += 2;
+          std::cout << "CALL nn: dest=0x" << std::hex << dest 
+                    << " current PC=0x" << cpu.PC 
+                    << " SP before push=0x" << cpu.SP << std::dec << std::endl;
           // Push current PC onto stack
           cpu.SP -= 2;
           writeMemory(cpu.SP, cpu.PC & 0xFF);      // Low Byte 
           writeMemory(cpu.SP + 1, (cpu.PC >> 8));  // High Byte 
+          std::cout << "CALL: pushed return address 0x" << std::hex << cpu.PC 
+                    << " to SP=0x" << cpu.SP << std::dec << std::endl;
           cpu.PC = dest;
           cycles = 17;
           break;
         }
 
         case 0x31: { // LD SP, nn 
-          cpu.SP = read16(cpu.PC);
+          uint16_t addr = read16(cpu.PC);
+          cpu.SP = addr;
           cpu.PC += 2;
-          // Log only if SP is in ROM area (shouldn't happen)
+          std::cout << "LD SP, nn: SP set to 0x" << std::hex << cpu.SP 
+                    << " (read from PC=0x" << (cpu.PC-2) << ")" << std::dec << std::endl;
+          // Log if SP is in ROM area
           if (cpu.SP < 0x8000) {
-              std::cout << "LD SP, 0x" << std::hex << cpu.SP << " (page=" << (cpu.SP >> 14) << ") WARNING: SP in ROM area!" << std::dec << std::endl;
+              std::cout << "WARNING: SP in ROM area! (0x" << std::hex << cpu.SP << ")" << std::dec << std::endl;
           }
           cycles = 10;
           break;
@@ -1137,8 +1145,11 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
         } 
  
         case 0xC9: { // RET
-            cpu.PC = read16(cpu.SP);
+            uint16_t ret_addr = read16(cpu.SP);
+            cpu.PC = ret_addr;
             cpu.SP += 2;
+            std::cout << "RET: returning to 0x" << std::hex << cpu.PC 
+                      << " (popped from SP=0x" << (cpu.SP-2) << ")" << std::dec << std::endl;
             cycles = 10;
             break;
         }

@@ -117,26 +117,14 @@ void Memory::reset() {
 
 uint8_t Memory::read(uint16_t addr) const {
     int page = (addr >> 14) & 0x03;
-    // Log only first few reads and when page changes significantly
+    // Log first 20 reads
     static int read_count = 0;
-    static uint16_t last_addr = 0xFFFF;
-    static int last_page = -1;
-    
-    bool should_log = false;
-    if (read_count < 10) {
-        should_log = true;
-        read_count++;
-    } else if ((addr >> 8) != (last_addr >> 8)) { // Log when high byte changes
-        should_log = true;
-    }
-    
-    if (should_log) {
+    if (read_count < 20) {
         std::cout << "MEM read: addr=0x" << std::hex << std::setw(4) << std::setfill('0') << addr 
                   << " page=" << page << " slot=" << ((current_ppi_val >> (page*2)) & 0x03);
         uint8_t val = (page_map[page]) ? page_map[page]->read(addr) : 0xFF;
         std::cout << " val=0x" << std::setw(2) << std::setfill('0') << (int)val << std::dec << std::endl;
-        last_addr = addr;
-        last_page = page;
+        read_count++;
         return val;
     }
     
@@ -175,8 +163,10 @@ void Memory::write(uint16_t addr, uint8_t value) {
         if (rom) {
             // ROM is read-only, ignore write
             static int rom_write_attempts = 0;
-            if (rom_write_attempts < 10) {
-                std::cout << "MEM write: Attempt to write to ROM at 0x" << std::hex << addr << " ignored" << std::dec << std::endl;
+            if (rom_write_attempts < 20) {
+                std::cout << "ALERTA: Tentativa de escrita em ROM no endereço 0x" << std::hex << addr 
+                          << " (page=" << page << " slot=" << ((current_ppi_val >> (page*2)) & 0x03) 
+                          << ")" << std::dec << std::endl;
                 rom_write_attempts++;
             }
             return;
