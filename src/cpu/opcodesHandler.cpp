@@ -2,6 +2,7 @@
 #include "cpu/z80a.h"
 #include <fstream>
 #include <unordered_map>
+#include <iomanip>
 #include "debug.h"
 
 OpcodesHandler::OpcodesHandler(Z80A& cpu) : cpu(cpu), cycles(0) {

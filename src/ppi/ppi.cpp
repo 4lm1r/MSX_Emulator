@@ -1,5 +1,7 @@
 #include "ppi.h"
 #include "keyboard/keyboard.h"
+#include <iostream>
+#include <iomanip>
 
 PPI& PPI::getInstance() {
     static PPI instance;
@@ -42,7 +44,12 @@ void PPI::write(uint8_t port, uint8_t value) {
     switch (port & 0x03) {
         case 0: // Port A: Primary Slot Select (AAAA BBBB CCCC DDDD)
             portA = value;
-            if (slot_select_callback) slot_select_callback(value);
+            if (slot_select_callback) {
+                std::cout << "PPI: Calling slot_select_callback with value=0x" 
+                          << std::hex << std::setw(2) << std::setfill('0') << (int)value 
+                          << std::dec << std::endl;
+                slot_select_callback(value);
+            }
             break;
         case 1: // Port B is usually input on MSX
             portB = value;
