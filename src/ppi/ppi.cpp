@@ -13,9 +13,14 @@ PPI::PPI() : portA(0), portB(0xFF), portC(0), control(0) {
 }
 
 void PPI::reset() {
-    portA = 0x00; // Primary slot 0 for all pages
+    portA = 0xC0; // Primary slot: Page 0=0, Page 1=0, Page 2=0, Page 3=3 (matches memory reset)
     portB = 0xFF; // No keys pressed
     portC = 0x00;
+    // Notify memory about initial slot mapping
+    if (slot_select_callback) {
+        std::cout << "PPI::reset: Calling slot_select_callback with 0x" << std::hex << (int)portA << std::dec << std::endl;
+        slot_select_callback(portA);
+    }
 }
 
 uint8_t PPI::read(uint8_t port) {

@@ -85,7 +85,7 @@ Memory::Memory() : current_ppi_val(0) {
 
 void Memory::reset() {
     std::cout << "Memory::reset: Initializing slots..." << std::endl;
-    // Default setup: Slot 0 = ROM, Slot 1 = RAM, Slots 2,3 = RAM
+    // Default setup: Slot 0 = ROM, Slots 1,2,3 = RAM
     primary_slots[0] = std::make_shared<RomSlot>(64 * 1024);
     primary_slots[1] = std::make_shared<RamSlot>(64 * 1024);
     primary_slots[2] = std::make_shared<RamSlot>(64 * 1024);
@@ -97,8 +97,12 @@ void Memory::reset() {
     std::cout << "  Slot 3: RAM (64KB)" << std::endl;
     
     // MSX1 default: Page 0,1 = ROM (Slot 0), Page 2,3 = RAM (Slot 3)
-    // This puts RAM at 0x8000-0xFFFF which is where the stack should be
-    mapPrimarySlots(0x30); // 0x30 = 0011 0000: Page 0=0, Page 1=0, Page 2=3, Page 3=3
+    // But to ensure RAM is accessible for stack, let's map Slot 3 to page 3 initially
+    // 0xFF = 1111 1111: Page 0=3, Page 1=3, Page 2=3, Page 3=3 (all RAM)
+    // However, BIOS needs ROM at page 0, so we need a mix.
+    // Let's use 0xC0 = 1100 0000: Page 0=0 (ROM), Page 1=0 (ROM), Page 2=0 (ROM), Page 3=3 (RAM)
+    // But SP=0xF380 is in page 3, which is RAM. Good.
+    mapPrimarySlots(0xC0); // 0xC0 = 1100 0000: Page 0=0, Page 1=0, Page 2=0, Page 3=3
 }
 
 uint8_t Memory::read(uint16_t addr) const {
@@ -160,13 +164,30 @@ void Memory::write(uint16_t addr, uint8_t value) {
             uint8_t read_back = page_map[page]->read(addr);
             if (read_back != value) {
                 std::cout << "MEM write: WARNING: write/read mismatch at 0x" << std::hex << addr 
-                          << " wrote=0x" << (int)value << " read=0x" << (int)read_back << std::dec << std::endl;
+                          << " wrote=0x" << (int)value << " read=0x" << (int)read_back 
+                          << " page=" << page << " slot=" << ((current_ppi_val >> (page*2)) & 0x03)
+                          << std::dec << std::endl;
                 mismatch_count++;
+            } else {
+                // Log successful write for first few writes to RAM
+                static int success_log = 0;
+                if (success_log < 5) {
+                    std::cout << "MEM write: SUCCESS: wrote 0x" << std::hex << (int)value 
+                              << " to addr 0x" << addr << " (RAM)" << std::dec << std::endl;
+                    success_log++;
+                }
             }
         }
     } else {
+        // This should not happen, but if it does, try to write to Slot 3 RAM directly
+        // as a fallback for safety
         if (write_count < 5) {
-            std::cout << "MEM write: ERROR: no slot mapped for page " << page << " at addr 0x" << std::hex << addr << std::dec << std::endl;
+            std::cout << "MEM write: WARNING: no slot mapped for page " << page 
+                      << ", falling back to Slot 3 RAM at addr 0x" << std::hex << addr << std::dec << std::endl;
+        }
+        // Write to Slot 3 RAM directly
+        if (primary_slots[3]) {
+            primary_slots[3]->write(addr, value);
         }
     }
 }
@@ -182,9 +203,9 @@ void Memory::mapPrimarySlots(uint8_t ppi_val) {
     current_ppi_val = ppi_val;
     // ppi_val = [D7 D6] [D5 D4] [D3 D2] [D1 D0]
     //            Page 3  Page 2  Page 1  Page 0
-    // Always log mappings
+    // Always log mappings (first 30)
     static int map_count = 0;
-    if (map_count < 20) {
+    if (map_count < 30) {
         std::cout << "Memory::mapPrimarySlots: ppi_val=0x" << std::hex << (int)ppi_val << std::dec << std::endl;
         for (int page = 0; page < 4; ++page) {
             int slot_index = (ppi_val >> (page * 2)) & 0x03;
