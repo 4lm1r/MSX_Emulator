@@ -506,9 +506,10 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
             uint16_t addr = read16(cpu.PC);
             cpu.PC += 2;
             if (!(cpu.F & Z80A::Z_BIT)) {
+                uint16_t return_addr = cpu.PC;
                 cpu.SP -= 2;
-                writeMemory(cpu.SP, cpu.PC & 0xFF);
-                writeMemory(cpu.SP + 1, cpu.PC >> 8);
+                writeMemory(cpu.SP, return_addr & 0xFF);
+                writeMemory(cpu.SP + 1, return_addr >> 8);
                 cpu.PC = addr;
                 cycles = 17;
             } else {
@@ -520,9 +521,10 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
             uint16_t addr = read16(cpu.PC);
             cpu.PC += 2;
             if (cpu.F & Z80A::C_BIT) {
+                uint16_t return_addr = cpu.PC;
                 cpu.SP -= 2;
-                writeMemory(cpu.SP, cpu.PC & 0xFF);
-                writeMemory(cpu.SP + 1, cpu.PC >> 8);
+                writeMemory(cpu.SP, return_addr & 0xFF);
+                writeMemory(cpu.SP + 1, return_addr >> 8);
                 cpu.PC = addr;
                 cycles = 17;
             } else {
@@ -534,9 +536,10 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
             uint16_t addr = read16(cpu.PC);
             cpu.PC += 2;
             if (cpu.F & Z80A::S_BIT) {
+                uint16_t return_addr = cpu.PC;
                 cpu.SP -= 2;
-                writeMemory(cpu.SP, cpu.PC & 0xFF);
-                writeMemory(cpu.SP + 1, cpu.PC >> 8);
+                writeMemory(cpu.SP, return_addr & 0xFF);
+                writeMemory(cpu.SP + 1, return_addr >> 8);
                 cpu.PC = addr;
                 cycles = 17;
             } else {
@@ -644,17 +647,22 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
         case 0xCD: {  // CALL nn 
           uint16_t dest = read16(cpu.PC);
           cpu.PC += 2;
+          uint16_t return_addr = cpu.PC;
           std::cout << "CALL nn: dest=0x" << std::hex << dest 
-                    << " return address=0x" << cpu.PC 
+                    << " return address=0x" << return_addr 
                     << " SP before push=0x" << cpu.SP << std::dec << std::endl;
           // Push current PC onto stack (little-endian: low byte first)
           cpu.SP -= 2;
-          writeMemory(cpu.SP, cpu.PC & 0xFF);      // Low Byte at lower address
-          writeMemory(cpu.SP + 1, (cpu.PC >> 8));  // High Byte at higher address
-          std::cout << "CALL: pushed return address 0x" << std::hex << cpu.PC 
+          // Check if SP is in ROM area (shouldn't happen)
+          if (cpu.SP < 0x8000) {
+              std::cout << "CALL: WARNING: SP=0x" << std::hex << cpu.SP << " is in ROM area!" << std::dec << std::endl;
+          }
+          writeMemory(cpu.SP, return_addr & 0xFF);      // Low Byte at lower address
+          writeMemory(cpu.SP + 1, (return_addr >> 8));  // High Byte at higher address
+          std::cout << "CALL: pushed return address 0x" << std::hex << return_addr 
                     << " to SP=0x" << cpu.SP 
-                    << " (low=0x" << (int)(cpu.PC & 0xFF) 
-                    << " high=0x" << (int)(cpu.PC >> 8) << ")" << std::dec << std::endl;
+                    << " (low=0x" << (int)(return_addr & 0xFF) 
+                    << " high=0x" << (int)(return_addr >> 8) << ")" << std::dec << std::endl;
           cpu.PC = dest;
           cycles = 17;
           break;
