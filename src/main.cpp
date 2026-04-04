@@ -114,6 +114,12 @@ int main(int argc, char* argv[]) {
     cpu.PC = 0x0000;
     cpu.SP = 0xF380;
     std::cout << "CPU PC set to 0x" << std::hex << cpu.PC << " SP forced to 0x" << cpu.SP << std::dec << std::endl;
+    
+    // Execute a few instructions manually to see what happens
+    for (int i = 0; i < 10; i++) {
+        cpu.execute();
+    }
+    
     bool running = true;
     SDL_Event event;
     uint8_t screen_buffer[256 * 192 * 4];

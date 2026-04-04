@@ -11,6 +11,7 @@ Z80A::Z80A() : A(0), B(0), C(0), D(0), E(0), H(0), L(0), F(0), PC(0), SP(0xF380)
                interruptPending(false), total_cycles(0),
                EI_pending(false)
 {
+    std::cout << "Z80A constructor: SP forced to 0x" << std::hex << SP << std::dec << std::endl;
     opcodeHandler = std::make_unique<OpcodesHandler>(*this);
 }
 
@@ -46,9 +47,9 @@ int Z80A::execute() {
     
     uint8_t opcode = memoryReadCallback(PC);
     
-    // Always trace first 50 instructions
+    // Always trace first 100 instructions
     static int instruction_count = 0;
-    if (instruction_count < 50) {
+    if (instruction_count < 100) {
         std::cout << "CPU TRACE PC=0x" << std::hex << std::setw(4) << std::setfill('0') << PC 
                   << " op=0x" << std::setw(2) << std::setfill('0') << (int)opcode;
         // Show next two bytes for context

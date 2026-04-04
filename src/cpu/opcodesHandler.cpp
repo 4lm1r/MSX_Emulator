@@ -698,8 +698,9 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
         }
 
         case 0xC5: {  // PUSH BC 
+          uint16_t old_sp = cpu.SP;
           cpu.SP -= 2;
-          std::cout << "PUSH BC: SP changed from 0x" << std::hex << (cpu.SP + 2) 
+          std::cout << "PUSH BC: SP changed from 0x" << std::hex << old_sp 
                     << " to 0x" << cpu.SP << " value=0x" << cpu.getBC() << std::dec << std::endl;
           writeMemory(cpu.SP, cpu.C);      // Low byte
           writeMemory(cpu.SP + 1, cpu.B);  // High byte
