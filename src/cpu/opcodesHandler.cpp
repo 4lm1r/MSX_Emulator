@@ -13,7 +13,10 @@ OpcodesHandler::OpcodesHandler(Z80A& cpu) : cpu(cpu), cycles(0) {
 }
 
 uint16_t OpcodesHandler::read16(uint16_t addr) {
-  return readMemory(addr) | (readMemory(addr + 1) << 8);
+  // Little-endian: low byte first, high byte second
+  uint8_t low = readMemory(addr);
+  uint8_t high = readMemory(addr + 1);
+  return (high << 8) | low;
 }
 
 void OpcodesHandler::updateSZP(uint8_t result) {
@@ -642,14 +645,16 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
           uint16_t dest = read16(cpu.PC);
           cpu.PC += 2;
           std::cout << "CALL nn: dest=0x" << std::hex << dest 
-                    << " current PC=0x" << cpu.PC 
+                    << " return address=0x" << cpu.PC 
                     << " SP before push=0x" << cpu.SP << std::dec << std::endl;
-          // Push current PC onto stack
+          // Push current PC onto stack (little-endian: low byte first)
           cpu.SP -= 2;
-          writeMemory(cpu.SP, cpu.PC & 0xFF);      // Low Byte 
-          writeMemory(cpu.SP + 1, (cpu.PC >> 8));  // High Byte 
+          writeMemory(cpu.SP, cpu.PC & 0xFF);      // Low Byte at lower address
+          writeMemory(cpu.SP + 1, (cpu.PC >> 8));  // High Byte at higher address
           std::cout << "CALL: pushed return address 0x" << std::hex << cpu.PC 
-                    << " to SP=0x" << cpu.SP << std::dec << std::endl;
+                    << " to SP=0x" << cpu.SP 
+                    << " (low=0x" << (int)(cpu.PC & 0xFF) 
+                    << " high=0x" << (int)(cpu.PC >> 8) << ")" << std::dec << std::endl;
           cpu.PC = dest;
           cycles = 17;
           break;
@@ -685,8 +690,10 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
 
         case 0xC5: {  // PUSH BC 
           cpu.SP -= 2;
-          writeMemory(cpu.SP, cpu.C);
-          writeMemory(cpu.SP + 1, cpu.B);
+          std::cout << "PUSH BC: SP=0x" << std::hex << cpu.SP 
+                    << " value=0x" << cpu.getBC() << std::dec << std::endl;
+          writeMemory(cpu.SP, cpu.C);      // Low byte
+          writeMemory(cpu.SP + 1, cpu.B);  // High byte
           // Verify the write only if in RAM area (0x8000-0xFFFF)
           if (cpu.SP >= 0x8000) {
               uint8_t low = readMemory(cpu.SP);
@@ -695,6 +702,8 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
                   std::cout << "PUSH BC: WARNING: write mismatch at SP=0x" << std::hex << cpu.SP 
                             << " wrote C=0x" << (int)cpu.C << " read=0x" << (int)low
                             << " wrote B=0x" << (int)cpu.B << " read=0x" << (int)high << std::dec << std::endl;
+              } else {
+                  std::cout << "PUSH BC: Successfully wrote to RAM" << std::endl;
               }
           }
           cycles = 11;
@@ -1145,11 +1154,14 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
         } 
  
         case 0xC9: { // RET
-            uint16_t ret_addr = read16(cpu.SP);
+            uint8_t low = readMemory(cpu.SP);
+            uint8_t high = readMemory(cpu.SP + 1);
+            uint16_t ret_addr = (high << 8) | low;
             cpu.PC = ret_addr;
             cpu.SP += 2;
             std::cout << "RET: returning to 0x" << std::hex << cpu.PC 
-                      << " (popped from SP=0x" << (cpu.SP-2) << ")" << std::dec << std::endl;
+                      << " (popped from SP=0x" << (cpu.SP-2) 
+                      << " low=0x" << (int)low << " high=0x" << (int)high << ")" << std::dec << std::endl;
             cycles = 10;
             break;
         }

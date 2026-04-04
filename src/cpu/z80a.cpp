@@ -27,7 +27,7 @@ void Z80A::reset() {
     interruptPending = false;
     total_cycles = 0;
     EI_pending = false;
-    std::cout << "Z80A::reset: PC=0x" << std::hex << PC << " SP=0x" << SP << std::dec << std::endl;
+    std::cout << "Z80A::reset: PC=0x" << std::hex << PC << " SP=0x" << SP << " (FORCED)" << std::dec << std::endl;
 }
 
 int Z80A::execute() {

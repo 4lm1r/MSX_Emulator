@@ -157,21 +157,23 @@ void Memory::write(uint16_t addr, uint8_t value) {
         write_count++;
     }
     
-    if (page_map[page]) {
-        // Check if this is a ROM slot (read-only)
-        auto rom = std::dynamic_pointer_cast<RomSlot>(page_map[page]);
-        if (rom) {
-            // ROM is read-only, ignore write
-            static int rom_write_attempts = 0;
-            if (rom_write_attempts < 20) {
-                std::cout << "ALERTA: Tentativa de escrita em ROM no endereço 0x" << std::hex << addr 
-                          << " (page=" << page << " slot=" << ((current_ppi_val >> (page*2)) & 0x03) 
-                          << ")" << std::dec << std::endl;
-                rom_write_attempts++;
-            }
-            return;
+    // Determine which slot is mapped to this page
+    int slot_index = (current_ppi_val >> (page * 2)) & 0x03;
+    
+    // If slot 0 (ROM) is mapped, ignore write
+    if (slot_index == 0) {
+        static int rom_write_attempts = 0;
+        if (rom_write_attempts < 10) {
+            std::cout << "ALERTA: Tentativa de escrita em ROM (Slot 0) no endereço 0x" << std::hex << addr 
+                      << " (page=" << page << " slot=" << slot_index 
+                      << ")" << std::dec << std::endl;
+            rom_write_attempts++;
         }
-        // Write to RAM
+        return;
+    }
+    
+    // Otherwise, write to the mapped slot (should be RAM)
+    if (page_map[page]) {
         page_map[page]->write(addr, value);
         // Verify write for first few RAM writes
         static int verify_count = 0;
@@ -180,7 +182,7 @@ void Memory::write(uint16_t addr, uint8_t value) {
             if (read_back != value) {
                 std::cout << "MEM write: CRITICAL: write/read mismatch at 0x" << std::hex << addr 
                           << " wrote=0x" << (int)value << " read=0x" << (int)read_back 
-                          << " page=" << page << " slot=" << ((current_ppi_val >> (page*2)) & 0x03)
+                          << " page=" << page << " slot=" << slot_index
                           << std::dec << std::endl;
             } else {
                 std::cout << "MEM write: Verified RAM write at 0x" << std::hex << addr 
