@@ -18,6 +18,13 @@ int main(int argc, char* argv[]) {
     PPI& ppi = PPI::getInstance();
     Keyboard& keyboard = Keyboard::getInstance();
 
+    // Reset all components
+    cpu.reset();
+    memory.reset();
+    vdp.reset();
+    ppi.reset();
+    keyboard.reset();
+
     vdp.setCPU(&cpu);
     vdp.setDebugLogStream(debug_log);
 
@@ -53,17 +60,43 @@ int main(int argc, char* argv[]) {
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGRA8888, SDL_TEXTUREACCESS_STREAMING, 256, 192);
 
-    // Try loading BIOS from relative path
-    bool bios_loaded = memory.loadROM("roms/MSX.ROM", 0x0000);
-    if (!bios_loaded) {
-        bios_loaded = memory.loadROM("../roms/MSX.ROM", 0x0000);
+    // Try loading BIOS from multiple possible paths
+    bool bios_loaded = false;
+    const char* bios_paths[] = {
+        "./roms/MSX.ROM",
+        "roms/MSX.ROM",
+        "../roms/MSX.ROM",
+        "../../roms/MSX.ROM",
+        "MSX.ROM",
+        "../MSX.ROM"
+    };
+    
+    for (const char* path : bios_paths) {
+        std::cout << "Trying to load BIOS from: " << path << std::endl;
+        bios_loaded = memory.loadROM(path, 0x0000);
+        if (bios_loaded) {
+            std::cout << "BIOS loaded successfully from: " << path << std::endl;
+            break;
+        }
     }
     
     if (!bios_loaded) {
-        std::cerr << "Warning: Could not load roms/MSX.ROM. Emulator might not work correctly." << std::endl;
-        // Fallback: simple test program
-        // (This won't work well with slot-based memory unless we ensure it's in RAM or ROM slot)
+        std::cerr << "Error: Could not load MSX BIOS ROM." << std::endl;
+        std::cerr << "Please place a valid MSX BIOS ROM file named 'MSX.ROM' in the 'roms/' directory." << std::endl;
+        return 1;
     }
+    
+    // Log first 16 bytes of ROM to verify
+    std::cout << "First 16 bytes of ROM at 0x0000: ";
+    for (int i = 0; i < 16; i++) {
+        std::cout << std::hex << std::setw(2) << std::setfill('0') 
+                  << (int)memory.read(i) << " ";
+    }
+    std::cout << std::dec << std::endl;
+    
+    // Ensure PC starts at 0x0000
+    cpu.PC = 0x0000;
+    std::cout << "CPU PC set to 0x" << std::hex << cpu.PC << std::dec << std::endl;
 
     cpu.PC = 0x0000;
     bool running = true;

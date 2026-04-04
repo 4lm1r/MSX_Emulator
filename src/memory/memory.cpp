@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <unistd.h>
 
 // --- RomSlot ---
 RomSlot::RomSlot(size_t size) { buffer.resize(size, 0); }
@@ -14,6 +15,11 @@ bool RomSlot::load(const std::string& filename, uint16_t offset) {
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open()) {
         std::cout << "RomSlot::load: Failed to open file: " << filename << std::endl;
+        // Try to get current working directory
+        char cwd[1024];
+        if (getcwd(cwd, sizeof(cwd))) {
+            std::cout << "Current working directory: " << cwd << std::endl;
+        }
         return false;
     }
     
@@ -39,6 +45,15 @@ bool RomSlot::load(const std::string& filename, uint16_t offset) {
         std::cout << std::setw(2) << std::setfill('0') << (int)buffer[offset + i] << " ";
     }
     std::cout << std::dec << std::endl;
+    
+    // Also log bytes at 0x4000 (BASIC ROM area)
+    if (file_size > 0x4000) {
+        std::cout << "RomSlot::load: First 16 bytes of BASIC ROM at 0x4000: ";
+        for (int i = 0; i < 16; i++) {
+            std::cout << std::setw(2) << std::setfill('0') << (int)buffer[0x4000 + i] << " ";
+        }
+        std::cout << std::dec << std::endl;
+    }
     
     return true;
 }
@@ -69,11 +84,17 @@ Memory::Memory() : current_ppi_val(0) {
 }
 
 void Memory::reset() {
+    std::cout << "Memory::reset: Initializing slots..." << std::endl;
     // Default setup: Slot 0 = ROM, Slot 1 = RAM, Slots 2,3 = Empty
     primary_slots[0] = std::make_shared<RomSlot>(64 * 1024);
     primary_slots[1] = std::make_shared<RamSlot>(64 * 1024);
     primary_slots[2] = std::make_shared<RamSlot>(64 * 1024); // More RAM for now
     primary_slots[3] = std::make_shared<RamSlot>(64 * 1024);
+    
+    std::cout << "  Slot 0: ROM (64KB)" << std::endl;
+    std::cout << "  Slot 1: RAM (64KB)" << std::endl;
+    std::cout << "  Slot 2: RAM (64KB)" << std::endl;
+    std::cout << "  Slot 3: RAM (64KB)" << std::endl;
     
     mapPrimarySlots(0xC0); // Page 0,1,2 = Slot 0, Page 3 = Slot 3 (RAM)
 }
@@ -100,9 +121,12 @@ void Memory::mapPrimarySlots(uint8_t ppi_val) {
     current_ppi_val = ppi_val;
     // ppi_val = [D7 D6] [D5 D4] [D3 D2] [D1 D0]
     //            Page 3  Page 2  Page 1  Page 0
+    std::cout << "Memory::mapPrimarySlots: ppi_val=0x" << std::hex << (int)ppi_val << std::dec << std::endl;
     for (int page = 0; page < 4; ++page) {
         int slot_index = (ppi_val >> (page * 2)) & 0x03;
         page_map[page] = primary_slots[slot_index];
+        std::cout << "  Page " << page << " (0x" << std::hex << (page * 0x4000) << "-0x" << ((page+1)*0x4000 -1) 
+                  << ") -> Slot " << slot_index << std::dec << std::endl;
     }
 }
 
