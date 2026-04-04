@@ -32,7 +32,7 @@ void Z80A::reset() {
 int Z80A::execute() {
     if (halted) {
         static int halt_count = 0;
-        if (halt_count < 3) {
+        if (halt_count < 1) {
             std::cout << "CPU halted at PC=0x" << std::hex << PC << std::dec << std::endl;
             halt_count++;
         }
@@ -45,9 +45,20 @@ int Z80A::execute() {
     
     uint8_t opcode = memoryReadCallback(PC);
     
-    // Trace first 50 instructions
+    // Trace only when PC crosses page boundaries or first few instructions
     static int instruction_count = 0;
-    if (instruction_count < 50) {
+    static uint16_t last_pc_page = 0xFFFF;
+    uint16_t current_pc_page = PC >> 8; // High byte of PC
+    
+    bool should_trace = false;
+    if (instruction_count < 10) {
+        should_trace = true;
+        instruction_count++;
+    } else if (current_pc_page != last_pc_page) {
+        should_trace = true;
+    }
+    
+    if (should_trace) {
         std::cout << "CPU TRACE PC=0x" << std::hex << std::setw(4) << std::setfill('0') << PC 
                   << " op=0x" << std::setw(2) << std::setfill('0') << (int)opcode;
         // Show next two bytes for context
@@ -61,7 +72,7 @@ int Z80A::execute() {
                   << " HL=0x" << std::setw(4) << getHL()
                   << " SP=0x" << std::setw(4) << SP;
         std::cout << std::dec << std::endl;
-        instruction_count++;
+        last_pc_page = current_pc_page;
     }
     
     debug_log << "PC: 0x" << std::hex << PC << " Op: 0x" << (int)opcode << std::dec << std::endl;

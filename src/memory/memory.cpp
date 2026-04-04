@@ -107,6 +107,14 @@ uint8_t Memory::read(uint16_t addr) const {
 
 void Memory::write(uint16_t addr, uint8_t value) {
     int page = (addr >> 14) & 0x03;
+    // Log first few writes to RAM areas
+    static int write_count = 0;
+    if (write_count < 10) {
+        std::cout << "MEM write: addr=0x" << std::hex << std::setw(4) << std::setfill('0') << addr 
+                  << " page=" << page << " slot=" << ((current_ppi_val >> (page*2)) & 0x03)
+                  << " val=0x" << std::setw(2) << (int)value << std::dec << std::endl;
+        write_count++;
+    }
     if (page_map[page]) page_map[page]->write(addr, value);
 }
 
@@ -121,12 +129,29 @@ void Memory::mapPrimarySlots(uint8_t ppi_val) {
     current_ppi_val = ppi_val;
     // ppi_val = [D7 D6] [D5 D4] [D3 D2] [D1 D0]
     //            Page 3  Page 2  Page 1  Page 0
-    std::cout << "Memory::mapPrimarySlots: ppi_val=0x" << std::hex << (int)ppi_val << std::dec << std::endl;
-    for (int page = 0; page < 4; ++page) {
-        int slot_index = (ppi_val >> (page * 2)) & 0x03;
-        page_map[page] = primary_slots[slot_index];
-        std::cout << "  Page " << page << " (0x" << std::hex << (page * 0x4000) << "-0x" << ((page+1)*0x4000 -1) 
-                  << ") -> Slot " << slot_index << std::dec << std::endl;
+    static int map_count = 0;
+    if (map_count < 5) {
+        std::cout << "Memory::mapPrimarySlots: ppi_val=0x" << std::hex << (int)ppi_val << std::dec << std::endl;
+        for (int page = 0; page < 4; ++page) {
+            int slot_index = (ppi_val >> (page * 2)) & 0x03;
+            page_map[page] = primary_slots[slot_index];
+            std::cout << "  Page " << page << " (0x" << std::hex << (page * 0x4000) << "-0x" << ((page+1)*0x4000 -1) 
+                      << ") -> Slot " << slot_index;
+            // Show slot type
+            if (primary_slots[slot_index]) {
+                auto rom = std::dynamic_pointer_cast<RomSlot>(primary_slots[slot_index]);
+                if (rom) std::cout << " (ROM)";
+                else std::cout << " (RAM)";
+            }
+            std::cout << std::dec << std::endl;
+        }
+        map_count++;
+    } else {
+        // Just update mapping without logging
+        for (int page = 0; page < 4; ++page) {
+            int slot_index = (ppi_val >> (page * 2)) & 0x03;
+            page_map[page] = primary_slots[slot_index];
+        }
     }
 }
 

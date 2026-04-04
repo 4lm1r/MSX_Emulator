@@ -32,6 +32,13 @@ uint8_t PPI::read(uint8_t port) {
 }
 
 void PPI::write(uint8_t port, uint8_t value) {
+    static int ppi_write_count = 0;
+    if (ppi_write_count < 10) {
+        std::cout << "PPI write: port=0x" << std::hex << (int)(port & 0x03) 
+                  << " value=0x" << std::setw(2) << std::setfill('0') << (int)value 
+                  << std::dec << std::endl;
+        ppi_write_count++;
+    }
     switch (port & 0x03) {
         case 0: // Port A: Primary Slot Select (AAAA BBBB CCCC DDDD)
             portA = value;
