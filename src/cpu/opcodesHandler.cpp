@@ -1016,7 +1016,7 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
           cycles = 7;
           break;
         }
-        case 0xB0: {  //OR B
+        case 0xB0: {  // OR B
           cpu.A |= cpu.B;
           updateSZP(cpu.A);
           cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
@@ -1028,21 +1028,77 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
              cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
              break;
         }
-        case 0xB2: { cpu.A |= cpu.D; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
-        case 0xB3: { cpu.A |= cpu.E; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
-        case 0xB4: { cpu.A |= cpu.H; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
-        case 0xB5: { cpu.A |= cpu.L; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
-        case 0xB6: { cpu.A |= readMemory(cpu.getHL()); updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); cycles = 7; break; }
-        case 0xB7: { cpu.A |= cpu.A; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
-
-        case 0xB8: { updateFlagsSub(cpu.A, cpu.B, (uint16_t)cpu.A - cpu.B); break; }
-        case 0xB9: { updateFlagsSub(cpu.A, cpu.C, (uint16_t)cpu.A - cpu.C); break; }
-        case 0xBA: { updateFlagsSub(cpu.A, cpu.D, (uint16_t)cpu.A - cpu.D); break; }
-        case 0xBB: { updateFlagsSub(cpu.A, cpu.E, (uint16_t)cpu.A - cpu.E); break; }
-        case 0xBC: { updateFlagsSub(cpu.A, cpu.H, (uint16_t)cpu.A - cpu.H); break; }
-        case 0xBD: { updateFlagsSub(cpu.A, cpu.L, (uint16_t)cpu.A - cpu.L); break; }
-        case 0xBE: { uint8_t val = readMemory(cpu.getHL()); updateFlagsSub(cpu.A, val, (uint16_t)cpu.A - val); cycles = 7; break; }
-        case 0xBF: { updateFlagsSub(cpu.A, cpu.A, 0); break; }
+        case 0xB2: { // OR D
+          cpu.A |= cpu.D;
+          updateSZP(cpu.A);
+          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+          break;
+        }
+        case 0xB3: { // OR E
+          cpu.A |= cpu.E;
+          updateSZP(cpu.A);
+          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+          break;
+        }
+        case 0xB4: { // OR H
+          cpu.A |= cpu.H;
+          updateSZP(cpu.A);
+          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+          break;
+        }
+        case 0xB5: { // OR L
+          cpu.A |= cpu.L;
+          updateSZP(cpu.A);
+          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+          break;
+        }
+        case 0xB6: { // OR (HL)
+          cpu.A |= readMemory(cpu.getHL());
+          updateSZP(cpu.A);
+          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+          cycles = 7;
+          break;
+        }
+        case 0xB7: { // OR A
+          cpu.A |= cpu.A;
+          updateSZP(cpu.A);
+          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
+          break;
+        }
+        case 0xB8: { // CP B
+          updateFlagsSub(cpu.A, cpu.B, (uint16_t)cpu.A - cpu.B);
+          break;
+        }
+        case 0xB9: { // CP C
+          updateFlagsSub(cpu.A, cpu.C, (uint16_t)cpu.A - cpu.C);
+          break;
+        }
+        case 0xBA: { // CP D
+          updateFlagsSub(cpu.A, cpu.D, (uint16_t)cpu.A - cpu.D);
+          break;
+        }
+        case 0xBB: { // CP E
+          updateFlagsSub(cpu.A, cpu.E, (uint16_t)cpu.A - cpu.E);
+          break;
+        }
+        case 0xBC: { // CP H
+          updateFlagsSub(cpu.A, cpu.H, (uint16_t)cpu.A - cpu.H);
+          break;
+        }
+        case 0xBD: { // CP L
+          updateFlagsSub(cpu.A, cpu.L, (uint16_t)cpu.A - cpu.L);
+          break;
+        }
+        case 0xBE: { // CP (HL)
+          uint8_t val = readMemory(cpu.getHL());
+          updateFlagsSub(cpu.A, val, (uint16_t)cpu.A - val);
+          cycles = 7;
+          break;
+        }
+        case 0xBF: { // CP A
+          updateFlagsSub(cpu.A, cpu.A, 0);
+          break;
+        }
         case 0xE6: {  // AND n
           uint8_t n = readMemory(cpu.PC++);
           cpu.A &= n;
@@ -1170,9 +1226,9 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
         }
 
         case 0xFB: { // EI
-            cpu.IFF1 = cpu.IFF2 = true;
+            // Set pending flag to enable interrupts after the next instruction
+            cpu.EI_pending = true;
             cycles = 4;
-            // Interrupts are enabled after the instruction FOLLOWING EI
             break;
         }
 
@@ -1187,12 +1243,6 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
         case 0xAA: { cpu.A ^= cpu.D; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
         case 0xAB: { cpu.A ^= cpu.E; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
         case 0xAC: { cpu.A ^= cpu.H; updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); break; }
-        case 0xAD: {  // XOR L
-          cpu.A ^= cpu.L;
-          updateSZP(cpu.A);
-          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
-          break;
-        }
         case 0xEE: { // XOR n (Immediate)
              uint8_t n = readMemory(cpu.PC++);
              cpu.A ^= n;
@@ -1202,19 +1252,6 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
              break;
        }
 
-        case 0xB0: {  //OR B
-          cpu.A |= cpu.B;
-          updateSZP(cpu.A);
-          cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
-          break;
-        }
-        case 0xB1: {  // OR C 
-             cpu.A |= cpu.C;
-             updateSZP(cpu.A);
-             cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT);
-             break;
-        }
-        case 0xB6: { cpu.A |= readMemory(cpu.getHL()); updateSZP(cpu.A); cpu.F &= ~(Z80A::C_BIT | Z80A::H_BIT | Z80A::N_BIT); cycles = 7; break; }
         case 0xF6: {  // OR n
           uint8_t n = readMemory(cpu.PC++);
           cpu.A |= n;
@@ -1225,10 +1262,7 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
         }
 
         // --- Compare Group ---
-        case 0xB8: { updateFlagsSub(cpu.A, cpu.B, (uint16_t)cpu.A - cpu.B); break; }
-        case 0xB9: { updateFlagsSub(cpu.A, cpu.C, (uint16_t)cpu.A - cpu.C); break; }
-        case 0xBE: { uint8_t val = readMemory(cpu.getHL()); updateFlagsSub(cpu.A, val, (uint16_t)cpu.A - val); cycles = 7; break; }
-        case 0xBF: { updateFlagsSub(cpu.A, cpu.A, 0); break; }
+        // Os casos 0xB8-0xBF já foram tratados acima
         case 0xFE: { // CP n 
             uint8_t n = readMemory(cpu.PC++);
             updateFlagsSub(cpu.A, n, (uint16_t)cpu.A - n);
@@ -1436,7 +1470,10 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
        case 0x3B: { cpu.SP--; cycles = 6; break; }                   // DEC SP
 
         default:
-            debug_log << "Unimplemented Opcode: 0x" << std::hex << (int)opcode << std::endl;
+            debug_log << "Unimplemented Opcode: 0x" << std::hex << (int)opcode << std::dec << std::endl;
+            // Para opcodes não implementados, apenas incrementar PC e usar ciclos padrão
+            // Alguns opcodes podem ser de 1 byte, mas não sabemos
+            // Para segurança, não fazer nada além de log
             break;
     }
 }

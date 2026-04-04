@@ -6,7 +6,8 @@ Z80A::Z80A() : A(0), B(0), C(0), D(0), E(0), H(0), L(0), F(0), PC(0), SP(0xF380)
                A_(0), F_(0), B_(0), C_(0), D_(0), E_(0), H_(0), L_(0),
                IX(0), IY(0), I(0), R(0),
                halted(false), IFF1(false), IFF2(false),
-               interruptPending(false), total_cycles(0)
+               interruptPending(false), total_cycles(0),
+               EI_pending(false)
 {
     opcodeHandler = std::make_unique<OpcodesHandler>(*this);
 }
@@ -23,11 +24,16 @@ void Z80A::reset() {
     IFF1 = IFF2 = false;
     interruptPending = false;
     total_cycles = 0;
+    EI_pending = false;
 }
 
 int Z80A::execute() {
     if (halted) return 4;
 
+    // Handle EI pending: interrupts are enabled after the instruction following EI
+    bool old_EI_pending = EI_pending;
+    EI_pending = false;
+    
     uint8_t opcode = memoryReadCallback(PC);
     debug_log << "PC: 0x" << std::hex << PC << " Op: 0x" << (int)opcode << std::dec << std::endl;
     PC++;
@@ -35,6 +41,12 @@ int Z80A::execute() {
     opcodeHandler->executeOpcode(opcode);
     int cycles = opcodeHandler->getCycles();
     total_cycles += cycles;
+    
+    // If EI was executed in the previous instruction, enable interrupts now
+    if (old_EI_pending) {
+        IFF1 = IFF2 = true;
+    }
+    
     return cycles;
 }
 
