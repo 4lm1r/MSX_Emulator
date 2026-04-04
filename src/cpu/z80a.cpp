@@ -59,13 +59,19 @@ void Z80A::triggerInterrupt() {
     
     if (halted) {
         halted = false;
+        // Don't increment PC - it's pointing to the HALT instruction
+        // which will be executed again after RETI unless we handle it
     }
 
     IFF1 = IFF2 = false;
     
+    // Push current PC onto stack
     SP -= 2;
     memoryWriteCallback(SP + 1, (PC >> 8) & 0xFF);
     memoryWriteCallback(SP, PC & 0xFF);
+    
+    // For now, always use IM1 (jump to 0x0038)
+    // TODO: Support other interrupt modes
     PC = 0x0038;
     total_cycles += 11;
 }
