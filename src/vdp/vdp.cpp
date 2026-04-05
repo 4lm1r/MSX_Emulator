@@ -125,21 +125,29 @@ void VDP::writeControlPort(uint8_t value) {
         }
     } else {
         is_second_byte = false;
-        // Always set VRAM address and mode, regardless of bit 7
-        uint16_t addr = ((value & 0x3F) << 8) | temp_addr; // 14-bit address (bits 0-5 of second byte)
-        vram_addr = addr & 0x3FFF; // Ensure within 16K VRAM
-        write_mode = (value & 0x40) != 0; // Bit 6: 1 = write, 0 = read
-        if (debug_log) {
-            *debug_log << "writeControlPort: vram_addr=0x" << std::hex << vram_addr << " (write=" << (write_mode ? "true" : "false") << ")" << std::dec << std::endl;
-            *debug_log << "Writing to VDP control port 0x99: 0x" << std::hex << (int)value << " at PC 0x" << cpu->PC << std::dec << std::endl;
-        }
-
-        // If bit 7 is set, also perform a register write
         if (value & 0x80) {
+            // Register write
             uint8_t reg = value & 0x07; // Register number (0-7)
             registers[reg] = temp_addr; // Value from first byte
             if (debug_log) {
-                *debug_log << "writeControlPort: reg=" << (int)reg << ", value=0x" << std::hex << (int)temp_addr << std::dec << std::endl;
+                *debug_log << "writeControlPort: Register write: reg=" << (int)reg << ", value=0x" << std::hex << (int)temp_addr << std::dec << std::endl;
+                *debug_log << "Writing to VDP control port 0x99 (Register): 0x" << std::hex << (int)value << " at PC 0x" << cpu->PC << std::dec << std::endl;
+            }
+        } else {
+            // VRAM address setup
+            uint16_t addr = ((value & 0x3F) << 8) | temp_addr; // 14-bit address
+            vram_addr = addr & 0x3FFF;
+            write_mode = (value & 0x40) != 0; // Bit 6: 1 = write, 0 = read
+            
+            if (!write_mode) {
+                // Read-ahead: when setting read address, immediately load read buffer
+                read_buffer = vram[vram_addr];
+                vram_addr = (vram_addr + 1) & 0x3FFF;
+            }
+
+            if (debug_log) {
+                *debug_log << "writeControlPort: VRAM addr setup: vram_addr=0x" << std::hex << vram_addr << " (write=" << (write_mode ? "true" : "false") << ")" << std::dec << std::endl;
+                *debug_log << "Writing to VDP control port 0x99 (VRAM Addr): 0x" << std::hex << (int)value << " at PC 0x" << cpu->PC << std::dec << std::endl;
             }
         }
     }
@@ -150,82 +158,101 @@ void VDP::render(uint8_t* buffer, uint32_t width, uint32_t height) {
         if (debug_log) {
             *debug_log << "Display disabled" << std::endl;
         }
+        if (buffer) {
+            std::memset(buffer, 0, width * height * 4); // Show black if disabled
+        }
         return; // Display disabled
     }
+
+    // Determine Mode
+    bool m1 = (registers[1] >> 4) & 1;
+    bool m2 = (registers[1] >> 3) & 1;
+    bool m3 = (registers[0] >> 1) & 1;
+
     uint16_t name_table = (registers[2] & 0x0F) << 10;
     uint16_t pattern_table = (registers[4] & 0x07) << 11;
-    uint16_t color_table = (registers[3] & 0xFF) << 6;
+    uint16_t color_table = 0;
+    
+    if (m3) {
+        // Graphic 2
+        color_table = (registers[3] & 0x80) << 6;
+    } else {
+        // Graphic 1
+        color_table = (registers[3] & 0xFF) << 6;
+    }
+
     uint16_t sprite_attribute_table = (registers[5] & 0x7F) << 7;
     uint16_t sprite_pattern_table = (registers[6] & 0x07) << 11;
 
-    if (debug_log) {
-        *debug_log << "render: name_table=0x" << std::hex << name_table
-                  << ", pattern_table=0x" << pattern_table
-                  << ", color_table=0x" << color_table
-                  << ", sprite_attribute_table=0x" << sprite_attribute_table
-                  << ", sprite_pattern_table=0x" << sprite_pattern_table << std::dec << std::endl;
-    }
-
-    // TMS9918A palette (BGRA format for SDL_PIXELFORMAT_BGRA8888)
+    // TMS9918A palette (Values in 0xAARRGGBB format for my extraction logic)
     const uint32_t palette[16] = {
-        0x000000FF, // 0: Transparent/Black
-        0x000000FF, // 1: Black
-        0x21C842FF, // 2: Medium Green
-        0x5EDC78FF, // 3: Light Green
-        0xED5554FF, // 4: Dark Blue
-        0xFC767DFF, // 5: Light Blue
-        0x4D52D4FF, // 6: Dark Red
-        0xF5EB42FF, // 7: Cyan
-        0x5455FCFF, // 8: Medium Red
-        0x7879FFFF, // 9: Light Red
-        0x54C1D4FF, // 10: Dark Yellow
-        0x80CEE6FF, // 11: Light Yellow
-        0x3BB021FF, // 12: Dark Green
-        0xBA5BC9FF, // 13: Magenta
-        0xCCCCCCFF, // 14: Gray
+        0x00000000, // 0: Transparent
+        0xFF000000, // 1: Black
+        0xFF21C842, // 2: Medium Green
+        0xFF5EDC78, // 3: Light Green
+        0xFFED5554, // 4: Dark Blue
+        0xFFFC767D, // 5: Light Blue
+        0xFF4D52D4, // 6: Dark Red
+        0xFFF5EB42, // 7: Cyan
+        0xFF5455FC, // 8: Medium Red
+        0xFF7879FF, // 9: Light Red
+        0xFF54C1D4, // 10: Dark Yellow
+        0xFF80CEE6, // 11: Light Yellow
+        0xFF3BB021, // 12: Dark Green
+        0xFFBA5BC9, // 13: Magenta
+        0xFFCCCCCC, // 14: Gray
         0xFFFFFFFF  // 15: White
     };
 
     // Clear buffer with background color from register 7
     uint8_t bg_color_idx = registers[7] & 0x0F;
-    uint32_t bg_color = palette[bg_color_idx];
+    uint32_t bg_color_val = palette[bg_color_idx];
     if (buffer) {
-        std::memset(buffer, 0, width * height * 4); // Clear to black
+        for (uint32_t i = 0; i < width * height; ++i) {
+            buffer[i * 4 + 0] = (bg_color_val >> 0) & 0xFF;  // B
+            buffer[i * 4 + 1] = (bg_color_val >> 8) & 0xFF;  // G
+            buffer[i * 4 + 2] = (bg_color_val >> 16) & 0xFF; // R
+            buffer[i * 4 + 3] = (bg_color_val >> 24) & 0xFF; // A
+        }
     }
 
     // Render 32x24 tiles (256x192 pixels)
-    for (uint32_t y = 0; y < height && y < 192; ++y) {
-        for (uint32_t x = 0; x < width && x < 256; ++x) {
+    for (uint32_t y = 0; y < 192; ++y) {
+        for (uint32_t x = 0; x < 256; ++x) {
             uint8_t tile_x = x / 8;
             uint8_t tile_y = y / 8;
             uint16_t name_idx = name_table + (tile_y * 32 + tile_x);
-            if (name_idx >= VRAM_SIZE) {
-                if (debug_log) {
-                    *debug_log << "Warning: name_idx out of bounds: 0x" << std::hex << name_idx << std::dec << std::endl;
-                }
-                continue;
-            }
+            if (name_idx >= VRAM_SIZE) continue;
+            
             uint8_t tile_idx = vram[name_idx];
-            uint16_t pattern_idx = pattern_table + (tile_idx * 8);
-            if (pattern_idx >= VRAM_SIZE) {
-                if (debug_log) {
-                    *debug_log << "Warning: pattern_idx out of bounds: 0x" << std::hex << pattern_idx << std::dec << std::endl;
-                }
-                continue;
+            uint16_t pattern_idx, color_idx;
+            
+            if (m3) {
+                // Graphic 2 logic
+                int block = (tile_y / 8); // 0, 1, or 2
+                uint16_t pattern_base = (registers[4] & 0x04) << 11;
+                uint16_t color_base = (registers[3] & 0x80) << 6;
+                
+                pattern_idx = pattern_base + ((block & (registers[4] & 0x03)) << 11) + (tile_idx << 3) + (y % 8);
+                color_idx = color_base + ((block & (registers[3] & 0x7F)) << 11) + (tile_idx << 3) + (y % 8);
+            } else {
+                // Graphic 1 logic
+                pattern_idx = pattern_table + (tile_idx * 8) + (y % 8);
+                color_idx = color_table + (tile_idx / 8);
             }
-            uint8_t pattern = vram[pattern_idx + (y % 8)];
-            uint16_t color_idx = color_table + tile_idx;
-            if (color_idx >= VRAM_SIZE) {
-                if (debug_log) {
-                    *debug_log << "Warning: color_idx out of bounds: 0x" << std::hex << color_idx << std::dec << std::endl;
-                }
-                continue;
-            }
-            uint8_t color = vram[color_idx];
-            uint8_t fg_color = (color >> 4) & 0x0F;
-            uint8_t bg_color_idx_tile = color & 0x0F;
+
+            if (pattern_idx >= VRAM_SIZE || color_idx >= VRAM_SIZE) continue;
+
+            uint8_t pattern = vram[pattern_idx];
+            uint8_t color_byte = vram[color_idx];
+            uint8_t fg_color = (color_byte >> 4) & 0x0F;
+            uint8_t bg_color = color_byte & 0x0F;
+            
             bool pixel = (pattern >> (7 - (x % 8))) & 1;
-            uint32_t color_val = pixel ? palette[fg_color] : palette[bg_color_idx_tile];
+            uint8_t final_color_idx = pixel ? fg_color : bg_color;
+            if (final_color_idx == 0) final_color_idx = bg_color_idx; // Transparent -> BG color
+            
+            uint32_t color_val = palette[final_color_idx];
             uint32_t idx = (y * width + x) * 4;
             if (idx < width * height * 4 && buffer) {
                 buffer[idx + 0] = (color_val >> 0) & 0xFF;  // B
@@ -233,129 +260,52 @@ void VDP::render(uint8_t* buffer, uint32_t width, uint32_t height) {
                 buffer[idx + 2] = (color_val >> 16) & 0xFF; // R
                 buffer[idx + 3] = (color_val >> 24) & 0xFF; // A
             }
-
-            if (x == 0 && y == 0) {
-                if (debug_log) {
-                    *debug_log << "First pixel: tile_idx=" << (int)tile_idx
-                              << ", pattern=0x" << std::hex << (int)pattern
-                              << ", color_idx=0x" << color_idx
-                              << ", color=0x" << (int)color
-                              << ", fg_color=0x" << (int)fg_color
-                              << ", bg_color_idx=0x" << (int)bg_color_idx_tile
-                              << ", pixel=" << pixel
-                              << ", color_val=0x" << color_val << std::dec << std::endl;
-                }
-            }
         }
     }
 
-    // Render sprites (8x8 for now, as set in register 1)
-    if (debug_log) {
-        *debug_log << "Starting sprite rendering..." << std::endl;
-    }
-    int sprite_count = 0;
+    // Render sprites
+    int sprites_on_line[192] = {0};
     for (int sprite = 0; sprite < 32; sprite++) {
         uint16_t sprite_idx = sprite_attribute_table + (sprite * 4);
-        if (debug_log) {
-            *debug_log << "Checking sprite " << sprite << " at index 0x" << std::hex << sprite_idx << std::dec << std::endl;
-        }
-        if (sprite_idx + 3 >= VRAM_SIZE) {
-            if (debug_log) {
-                *debug_log << "Warning: sprite_idx out of bounds: 0x" << std::hex << sprite_idx << std::dec << std::endl;
-            }
-            break;
-        }
+        if (sprite_idx + 3 >= VRAM_SIZE) break;
+
         uint8_t y_pos = vram[sprite_idx];
-        if (debug_log) {
-            *debug_log << "Sprite " << sprite << " y_pos: 0x" << std::hex << (int)y_pos << std::dec << std::endl;
-        }
-        if (y_pos == 0xD0) {
-            if (debug_log) {
-                *debug_log << "Sprite list terminated at sprite " << sprite << std::endl;
-            }
-            break; // End of sprite list
-        }
+        if (y_pos == 0xD0) break; // End of sprite list
+
         uint8_t x_pos = vram[sprite_idx + 1];
         uint8_t pattern_num = vram[sprite_idx + 2];
         uint8_t color = vram[sprite_idx + 3] & 0x0F;
 
-        if (debug_log) {
-            *debug_log << "Processing sprite " << sprite << ": x=" << (int)x_pos << ", y=" << (int)y_pos
-                      << ", pattern=" << (int)pattern_num << ", color=" << (int)color << std::endl;
-        }
+        if (color == 0) continue; // Transparent
 
-        if (color == 0) {
-            if (debug_log) {
-                *debug_log << "Sprite " << sprite << " skipped: transparent color" << std::endl;
-            }
-            continue; // Transparent color, skip
-        }
-
-        sprite_count++;
-        if (sprite_count > 4) {
-            if (debug_log) {
-                *debug_log << "Sprite limit reached: " << sprite_count << " sprites" << std::endl;
-            }
-            status |= 0x40; // Set 5th sprite flag
-            break; // Max 4 sprites per line (simplified)
-        }
+        int adjusted_y = y_pos + 1; // y_pos is coordinate-1
+        if (adjusted_y >= 240) adjusted_y -= 256; // Wraparound for sprites starting above top
 
         uint16_t sprite_pattern_idx = sprite_pattern_table + (pattern_num * 8);
-        if (sprite_pattern_idx >= VRAM_SIZE) {
-            if (debug_log) {
-                *debug_log << "Warning: sprite_pattern_idx out of bounds: 0x" << std::hex << sprite_pattern_idx << std::dec << std::endl;
-            }
-            continue;
-        }
-
-        // Adjust y_pos for TMS9918A: y=0 to 191 on-screen, 208+ terminates or off-screen
-        int adjusted_y = y_pos;
-        if (adjusted_y >= 208) {
-            if (debug_log) {
-                *debug_log << "Sprite " << sprite << " off-screen or terminated: y=" << (int)y_pos << std::endl;
-            }
-            continue;
-        }
-
-        if (debug_log) {
-            *debug_log << "Sprite " << sprite << " adjusted y: " << adjusted_y << std::endl;
-        }
+        if (sprite_pattern_idx + 7 >= VRAM_SIZE) continue;
 
         for (int sy = 0; sy < 8; sy++) {
             int screen_y = adjusted_y + sy;
-            if (screen_y < 0 || screen_y >= 192) {
-                if (debug_log) {
-                    *debug_log << "Sprite " << sprite << " row " << sy << " out of bounds: screen_y=" << screen_y << std::endl;
-                }
-                continue;
+            if (screen_y < 0 || screen_y >= 192) continue;
+            
+            if (++sprites_on_line[screen_y] > 4) {
+                status |= 0x40; // 5th sprite flag
+                // continue; // TMS9918A drops 5th sprite on line
             }
+
             uint8_t pattern = vram[sprite_pattern_idx + sy];
-            if (debug_log) {
-                *debug_log << "Sprite " << sprite << " row " << sy << " pattern: 0x" << std::hex << (int)pattern << std::dec << std::endl;
-            }
             for (int sx = 0; sx < 8; sx++) {
                 int screen_x = x_pos + sx;
-                if (screen_x < 0 || screen_x >= 256) {
-                    if (debug_log) {
-                        *debug_log << "Sprite " << sprite << " col " << sx << " out of bounds: screen_x=" << screen_x << std::endl;
-                    }
-                    continue;
-                }
-                bool pixel = (pattern >> (7 - sx)) & 1;
-                if (debug_log) {
-                    *debug_log << "Sprite " << sprite << " pixel (" << sx << "," << sy << "): " << pixel << std::endl;
-                }
-                if (!pixel) continue; // Transparent pixel
-                uint32_t idx = (screen_y * width + screen_x) * 4;
-                if (idx < width * height * 4 && buffer) {
-                    uint32_t color_val = palette[color];
-                    buffer[idx + 0] = (color_val >> 0) & 0xFF;  // B
-                    buffer[idx + 1] = (color_val >> 8) & 0xFF;  // G
-                    buffer[idx + 2] = (color_val >> 16) & 0xFF; // R
-                    buffer[idx + 3] = (color_val >> 24) & 0xFF; // A
-                    if (debug_log) {
-                        *debug_log << "Drawing sprite pixel at (" << screen_x << "," << screen_y << ") with color 0x"
-                                  << std::hex << color_val << std::dec << std::endl;
+                if (screen_x < 0 || screen_x >= 256) continue;
+                
+                if ((pattern >> (7 - sx)) & 1) {
+                    uint32_t idx = (screen_y * width + screen_x) * 4;
+                    if (idx < width * height * 4 && buffer) {
+                        uint32_t color_val = palette[color];
+                        buffer[idx + 0] = (color_val >> 0) & 0xFF;  // B
+                        buffer[idx + 1] = (color_val >> 8) & 0xFF;  // G
+                        buffer[idx + 2] = (color_val >> 16) & 0xFF; // R
+                        buffer[idx + 3] = (color_val >> 24) & 0xFF; // A
                     }
                 }
             }
