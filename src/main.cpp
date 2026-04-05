@@ -136,6 +136,15 @@ int main(int argc, char* argv[]) {
             int cycles = cpu.execute();
             vdp.update(cycles);
             frame_cycles += cycles;
+            
+            // Safety check: prevent infinite loops
+            static int instruction_counter = 0;
+            instruction_counter++;
+            if (instruction_counter > 1000000) {
+                std::cerr << "Safety break: Too many instructions executed, possible infinite loop" << std::endl;
+                running = false;
+                break;
+            }
         }
 
         // Render VDP output

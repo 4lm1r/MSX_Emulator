@@ -1532,9 +1532,9 @@ void OpcodesHandler::executeOpcode(uint8_t opcode) {
 
         default:
             debug_log << "Unimplemented Opcode: 0x" << std::hex << (int)opcode << std::dec << std::endl;
-            // Para opcodes não implementados, apenas incrementar PC e usar ciclos padrão
-            // Alguns opcodes podem ser de 1 byte, mas não sabemos
-            // Para segurança, não fazer nada além de log
+            // For unimplemented opcodes, just increment PC by 1 and use default cycles
+            // This prevents getting stuck on unknown opcodes
+            cycles = 4;
             break;
     }
 }

@@ -33,32 +33,19 @@ void VDP::reset() {
     write_mode = false; // Ensure default state
     // Set default mode: Graphic Mode 2
     registers[0] = 0x00; // External video off, 16K VRAM
-    registers[1] = 0xE0; // Enable display, 16x16 sprites, interrupts enabled (bit 5 set)
+    registers[1] = 0x80; // Enable display, 16x16 sprites, interrupts DISABLED initially (bit 5 cleared)
 }
 
 void VDP::update(int cycles) {
     cycle_counter += cycles;
-    if (debug_log) {
-        *debug_log << "VDP update: cycle_counter=" << cycle_counter << " after adding " << cycles << " cycles" << std::endl;
-    }
     if (cycle_counter >= CYCLES_PER_FRAME) {
         cycle_counter -= CYCLES_PER_FRAME;
         if (cycle_counter < 0) cycle_counter = 0; // Prevent underflow
         // Set interrupt flag in status register (bit 7)
         status |= 0x80;
-        if (debug_log) {
-            *debug_log << "VDP: Frame complete, setting interrupt flag, status=0x" << std::hex << (int)status << std::dec << std::endl;
-        }
         // If interrupts are enabled (register 1, bit 5) and CPU is set, trigger interrupt
         if ((registers[1] & 0x20) && cpu) {
-            if (debug_log) {
-                *debug_log << "VDP: Triggering interrupt at cycle " << cycle_counter << std::endl;
-            }
             cpu->triggerInterrupt();
-        } else {
-            if (debug_log) {
-                *debug_log << "VDP: Interrupt not triggered, interrupts disabled (reg1=0x" << std::hex << (int)registers[1] << std::dec << ")" << std::endl;
-            }
         }
     }
 }
@@ -108,11 +95,9 @@ void VDP::writeDataPort(uint8_t value) {
 
 uint8_t VDP::readControlPort() {
     uint8_t temp = status;
-    status = 0;
+    // Clear the interrupt flag when status is read
+    status &= ~0x80;
     is_second_byte = false;
-    if (debug_log) {
-        *debug_log << "readControlPort: status=0x" << std::hex << (int)temp << std::dec << std::endl;
-    }
     return temp;
 }
 
