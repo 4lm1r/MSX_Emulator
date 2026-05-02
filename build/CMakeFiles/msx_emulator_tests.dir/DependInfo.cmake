@@ -11,9 +11,14 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/src/cpu/opcodesHandler.cpp" "CMakeFiles/msx_emulator_tests.dir/src/cpu/opcodesHandler.cpp.o" "gcc" "CMakeFiles/msx_emulator_tests.dir/src/cpu/opcodesHandler.cpp.o.d"
   "/home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/src/cpu/z80a.cpp" "CMakeFiles/msx_emulator_tests.dir/src/cpu/z80a.cpp.o" "gcc" "CMakeFiles/msx_emulator_tests.dir/src/cpu/z80a.cpp.o.d"
   "/home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/src/debug.cpp" "CMakeFiles/msx_emulator_tests.dir/src/debug.cpp.o" "gcc" "CMakeFiles/msx_emulator_tests.dir/src/debug.cpp.o.d"
+  "/home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/src/keyboard/keyboard.cpp" "CMakeFiles/msx_emulator_tests.dir/src/keyboard/keyboard.cpp.o" "gcc" "CMakeFiles/msx_emulator_tests.dir/src/keyboard/keyboard.cpp.o.d"
   "/home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/src/memory/memory.cpp" "CMakeFiles/msx_emulator_tests.dir/src/memory/memory.cpp.o" "gcc" "CMakeFiles/msx_emulator_tests.dir/src/memory/memory.cpp.o.d"
+  "/home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/src/ppi/ppi.cpp" "CMakeFiles/msx_emulator_tests.dir/src/ppi/ppi.cpp.o" "gcc" "CMakeFiles/msx_emulator_tests.dir/src/ppi/ppi.cpp.o.d"
+  "/home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/src/psg/psg.cpp" "CMakeFiles/msx_emulator_tests.dir/src/psg/psg.cpp.o" "gcc" "CMakeFiles/msx_emulator_tests.dir/src/psg/psg.cpp.o.d"
   "/home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/src/vdp/vdp.cpp" "CMakeFiles/msx_emulator_tests.dir/src/vdp/vdp.cpp.o" "gcc" "CMakeFiles/msx_emulator_tests.dir/src/vdp/vdp.cpp.o.d"
   "/home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/tests/cpu/test_z80a.cpp" "CMakeFiles/msx_emulator_tests.dir/tests/cpu/test_z80a.cpp.o" "gcc" "CMakeFiles/msx_emulator_tests.dir/tests/cpu/test_z80a.cpp.o.d"
+  "/home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/tests/memory/test_memory.cpp" "CMakeFiles/msx_emulator_tests.dir/tests/memory/test_memory.cpp.o" "gcc" "CMakeFiles/msx_emulator_tests.dir/tests/memory/test_memory.cpp.o.d"
+  "/home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/tests/vdp/test_vdp.cpp" "CMakeFiles/msx_emulator_tests.dir/tests/vdp/test_vdp.cpp.o" "gcc" "CMakeFiles/msx_emulator_tests.dir/tests/vdp/test_vdp.cpp.o.d"
   "" "msx_emulator_tests" "gcc" "CMakeFiles/msx_emulator_tests.dir/link.d"
   )
 

@@ -1,5 +1,6 @@
 #include "ppi.h"
 #include "keyboard/keyboard.h"
+#include "memory/memory.h"
 #include <iostream>
 #include <iomanip>
 
@@ -13,22 +14,17 @@ PPI::PPI() : portA(0), portB(0xFF), portC(0), control(0) {
 }
 
 void PPI::reset() {
-    portA = 0xF0; // Primary slot: Page 0=0, Page 1=0, Page 2=3, Page 3=3 (RAM in pages 2 and 3)
-    portB = 0xFF; // No keys pressed
+    portA = 0xF0; // Primary slot: Page 0=0, Page 1=0, Page 2=3, Page 3=3
+    portB = 0xFF; // Keyboard data
     portC = 0x00;
     // Notify memory about initial slot mapping
-    if (slot_select_callback) {
-        std::cout << "PPI::reset: Calling slot_select_callback with 0x" << std::hex << (int)portA << std::dec << std::endl;
-        slot_select_callback(portA);
-    }
+    Memory::getInstance().mapPrimarySlots(portA);
 }
 
 uint8_t PPI::read(uint8_t port) {
     switch (port & 0x03) {
         case 0: return portA;
         case 1: {
-            // Port B is Keyboard data (Input)
-            // It should return the matrix state for the row selected in Port C
             uint8_t row = portC & 0x0F;
             return Keyboard::getInstance().readRow(row);
         }
@@ -39,33 +35,19 @@ uint8_t PPI::read(uint8_t port) {
 }
 
 void PPI::write(uint8_t port, uint8_t value) {
-    static int ppi_write_count = 0;
-    if (ppi_write_count < 10) {
-        std::cout << "PPI write: port=0x" << std::hex << (int)(port & 0x03) 
-                  << " value=0x" << std::setw(2) << std::setfill('0') << (int)value 
-                  << std::dec << std::endl;
-        ppi_write_count++;
-    }
     switch (port & 0x03) {
-        case 0: // Port A: Primary Slot Select (AAAA BBBB CCCC DDDD)
+        case 0:
             portA = value;
-            if (slot_select_callback) {
-                std::cout << "PPI: Calling slot_select_callback with value=0x" 
-                          << std::hex << std::setw(2) << std::setfill('0') << (int)value 
-                          << std::dec << std::endl;
-                slot_select_callback(value);
-            }
+            Memory::getInstance().mapPrimarySlots(value);
             break;
-        case 1: // Port B is usually input on MSX
+        case 1:
             portB = value;
             break;
-        case 2: // Port C: Row Select (bits 0-3)
+        case 2:
             portC = value;
-            if (row_select_callback) row_select_callback(value & 0x0F);
             break;
-        case 3: // Control register
+        case 3:
             control = value;
-            // Handle bit set/reset if bit 7 is 0
             if (!(value & 0x80)) {
                 uint8_t bit = (value >> 1) & 0x07;
                 if (value & 0x01) portC |= (1 << bit);

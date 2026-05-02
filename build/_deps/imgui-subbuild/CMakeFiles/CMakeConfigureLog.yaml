@@ -1,0 +1,95 @@
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineSystem.cmake:12 (find_program)"
+      - "CMakeLists.txt:16 (project)"
+    mode: "program"
+    variable: "CMAKE_UNAME"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "uname"
+    candidate_directories:
+      - "/home/abr/.pyenv/shims/"
+      - "/home/abr/.pyenv/bin/"
+      - "/home/abr/.bun/bin/"
+      - "/usr/local/bin/"
+      - "/usr/bin/"
+      - "/usr/local/sbin/"
+      - "/home/abr/.local/share/flatpak/exports/bin/"
+      - "/var/lib/flatpak/exports/bin/"
+      - "/usr/lib/jvm/default/bin/"
+      - "/usr/bin/site_perl/"
+      - "/usr/bin/vendor_perl/"
+      - "/usr/bin/core_perl/"
+      - "/opt/piper-tts/home/abr/Scripts/"
+      - "/home/abr/.fzf/bin/"
+      - "/usr/local/lib/"
+      - "/usr/include/"
+      - "/usr/local/include/"
+      - "/home/abr/.local/bin/"
+      - "/usr/include/gtk-4.0/"
+      - "/home/abr/Java/jdk-20.0.1/lib/"
+      - "/usr/include/gtkmm-4.0/"
+      - "/usr/lib/webkit2gtk-4.0/"
+      - "/home/abr/.cargo/bin/"
+      - "/home/abr/Android/Sdk/platform-tools/"
+      - "/home/abr/Android/Sdk/cmdline-tools/latest/bin/"
+      - "/home/abr/flutter/bin/"
+      - "/home/abr/.pub-cache/bin/"
+      - "/home/abr/.claude/plugins/cache/claude-plugins-official/clangd-lsp/1.0.0/bin/"
+      - "/bin/"
+    searched_directories:
+      - "/home/abr/.pyenv/shims/uname"
+      - "/home/abr/.pyenv/bin/uname"
+      - "/home/abr/.bun/bin/uname"
+      - "/usr/local/bin/uname"
+    found: "/usr/bin/uname"
+    search_context:
+      ENV{PATH}:
+        - "/home/abr/.pyenv/shims"
+        - "/home/abr/.pyenv/bin"
+        - "/home/abr/.bun/bin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/usr/local/sbin"
+        - "/home/abr/.local/share/flatpak/exports/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/opt/piper-tts/home/abr/Scripts"
+        - "/home/abr/.fzf/bin"
+        - "/usr/local/lib"
+        - "/usr/include"
+        - "/usr/local/include"
+        - "/home/abr/.local/bin"
+        - "/usr/include/gtk-4.0/"
+        - "~/Java/jdk-20.0.1/lib/"
+        - "/usr/include/gtkmm-4.0"
+        - "/usr/lib/webkit2gtk-4.0"
+        - "/home/abr/.cargo/bin"
+        - "/home/abr/Android/Sdk/platform-tools"
+        - "/home/abr/Android/Sdk/cmdline-tools/latest/bin"
+        - "/home/abr/flutter/bin"
+        - "/home/abr/.pub-cache/bin"
+        - "/home/abr/.claude/plugins/cache/claude-plugins-official/clangd-lsp/1.0.0/bin"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineSystem.cmake:212 (message)"
+      - "CMakeLists.txt:16 (project)"
+    message: |
+      The system is: Linux - 7.0.3-arch1-1 - x86_64
+...

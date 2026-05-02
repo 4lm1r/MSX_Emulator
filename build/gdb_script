@@ -1,0 +1,6 @@
+run
+shell sleep 5
+interrupt
+info registers
+bt
+quit

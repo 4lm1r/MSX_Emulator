@@ -1,0 +1,48 @@
+Z80A constructor: SP forced to 0xf380
+Memory::reset: Initializing slots...
+RamSlot created with size 65536 bytes
+  Slot 0: ROM (64KB)
+  Slot 1: Unpopulated
+  Slot 2: Unpopulated
+  Slot 3: RAM (64KB)
+Memory::reset: Mapped slots with ppi_val=0xF0
+Z80A::reset: PC=0x0
+Forced PPI Port A to 0xF0 for RAM mapping
+Trying to load BIOS from: ./roms/MSX.ROM
+RomSlot::load: Failed to open file: ./roms/MSX.ROM
+Current working directory: /home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/build
+Trying to load BIOS from: roms/MSX.ROM
+RomSlot::load: Failed to open file: roms/MSX.ROM
+Current working directory: /home/abr/PROJECTS/C++Projects/AdvancedC++/MSXEmulator/build
+Trying to load BIOS from: ../roms/MSX.ROM
+RomSlot::load: File '../roms/MSX.ROM' size: 32768 bytes
+RomSlot::load: First 16 bytes at offset 0x0: f3 c3 d7 02 bf 1b 98 98 c3 83 26 00 c3 b6 01 00 
+RomSlot::load: First 16 bytes of BASIC ROM at 0x4000: 229 205 57 84 68 77 237 120 195 207 79 205 47 84 213 207 
+BIOS loaded successfully from: ../roms/MSX.ROM
+First 32 bytes of ROM at 0x0000: f3 c3 d7 02 bf 1b 98 98 c3 83 26 00 c3 b6 01 00 
+                      c3 86 26 00 c3 d1 01 00 c3 45 1b 00 c3 17 02 00 
+                      
+First instruction at 0x0000: 0xf3 (DI if 0xF3)
+Second instruction at 0x0001: 0xc3 (JP if 0xC3)
+JP destination: 0x2d7
+CPU PC set to 0x0 SP forced to 0xf380
+IN A,(0xA8): retornando portA=0x0
+IN A,(0xA8): retornando portA=0x0
+IN A,(0xA8): retornando portA=0x50
+IN A,(0xA8): retornando portA=0xa0
+IN A,(0xA8): retornando portA=0xf0
+IN A,(0xA8): retornando portA=0xf0
+IN A,(0xA8): retornando portA=0xf0
+IN A,(0xA8): retornando portA=0x30
+IN A,(0xA8): retornando portA=0x30
+IN A,(0xA8): retornando portA=0x70
+IN A,(0xA8): retornando portA=0xb0
+IN A,(0xA8): retornando portA=0xf0
+IN A,(0xA8): retornando portA=0xf0
+IN A,(0xA8): retornando portA=0xf0
+IN A,(0xA8): retornando portA=0xf0
+IN A,(0xA8): retornando portA=0xf0
+IN A,(0xA8): retornando portA=0xf0
+IN A,(0xA8): retornando portA=0xf0
+IN A,(0xA8): retornando portA=0xf0
+IN A,(0xA8): retornando portA=0xf0

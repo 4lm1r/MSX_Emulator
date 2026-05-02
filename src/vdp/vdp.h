@@ -23,7 +23,7 @@ private:
     VDP();
     static constexpr int VRAM_SIZE = 0x4000; // 16KB
     static constexpr int NUM_REGISTERS = 8;
-    static constexpr int CYCLES_PER_FRAME = 59667; // NTSC: 3.58 MHz / 60 Hz at 3.58MHz)
+    static constexpr int CYCLES_PER_FRAME = 59736; // 3579545 / 59.92 Hz 
     uint8_t vram[VRAM_SIZE];
     uint8_t registers[NUM_REGISTERS];
     uint8_t status;
@@ -33,6 +33,7 @@ private:
     bool write_mode;
     uint8_t read_buffer;
     int cycle_counter;
+    bool interrupt_triggered;
     Z80A* cpu;
     std::ofstream* debug_log; // Pointer to debug log stream
 };
